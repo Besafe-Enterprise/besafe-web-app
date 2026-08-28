@@ -24,7 +24,7 @@
 - Multi-tier threat classification with AI acoustic confidence scoring, transcribed distress cues, and emergency contact broadcasts.
 - Frontline status workflow: `Active Distress` &rarr; `Unit Dispatched` &rarr; `Resolved` / `False Alarm`.
 
-### 3. SafeChat Intelligence & AI Dossiers
+### 3. SafeChat Intelligence & AI Dossier
 - Qualitative report management for harassment, assault, transit hazards, domestic safety, and community concerns.
 - Integration with Gemini LLM analytical pipelines for automated incident pattern extraction, timeline urgency evaluation, and severity scoring.
 - Forensic evidence vault with attached multimedia and secure investigator notes.
