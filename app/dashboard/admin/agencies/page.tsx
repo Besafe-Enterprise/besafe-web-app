@@ -12,8 +12,7 @@ import {
   XCircle,
   Loader2,
   Search,
-  ExternalLink,
-  SlidersHorizontal,
+  
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/shared/admin-page-header";
 import { AdminStatCard } from "@/components/shared/admin-stat-card";

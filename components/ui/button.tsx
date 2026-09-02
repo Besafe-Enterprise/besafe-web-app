@@ -4,28 +4,34 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20",
+          "bg-brand-600 text-white shadow-sm hover:bg-brand-700",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-critical text-critical-foreground shadow-sm hover:bg-critical/90",
         outline:
-          "border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground border-border",
+          "border border-border bg-transparent hover:bg-surface-200 hover:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        emergency:
-          "bg-gradient-to-r from-red-600 to-rose-700 text-white font-semibold shadow-lg shadow-red-500/25 hover:from-red-500 hover:to-rose-600 animate-pulse",
+          "bg-surface-300 text-foreground hover:bg-surface-400",
+        ghost:
+          "hover:bg-surface-200 hover:text-foreground",
+        link: "text-brand-500 underline-offset-4 hover:underline",
+        success:
+          "bg-success text-success-foreground shadow-sm hover:bg-success/90",
+        warning:
+          "bg-warning text-warning-foreground shadow-sm hover:bg-warning/90",
+        critical:
+          "bg-critical text-critical-foreground shadow-sm hover:bg-critical/90 animate-pulse",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 rounded-lg px-3 text-xs",
-        lg: "h-11 rounded-xl px-8 text-base",
-        icon: "h-10 w-10",
+        default: "h-9 px-4 py-2 text-sm",
+        sm: "h-8 rounded px-3 text-xs",
+        lg: "h-11 rounded-lg px-6 text-base",
+        icon: "h-9 w-9",
+        "icon-sm": "h-8 w-8",
       },
     },
     defaultVariants: {

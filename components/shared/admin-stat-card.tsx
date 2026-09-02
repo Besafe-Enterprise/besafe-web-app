@@ -3,58 +3,66 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface AdminStatCardProps {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
-  accentColor?: "destructive" | "primary" | "emerald" | "amber" | "indigo";
+  accentColor?: "brand" | "critical" | "success" | "warning" | "purple";
   trend?: {
     value: string | number;
-    isPositive: boolean;
+    direction: "up" | "down" | "neutral";
     description?: string;
   };
   subtext?: React.ReactNode;
   onClick?: () => void;
   className?: string;
+  loading?: boolean;
 }
+
+const accentClasses = {
+  brand: "bg-brand-500/10 text-brand-400 border-brand-500/20",
+  critical: "bg-critical/10 text-critical border-critical/30",
+  success: "bg-success/10 text-success border-success/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+};
+
+const trendConfig = {
+  up: { icon: TrendingUp, className: "bg-success/10 text-success border-success/20" },
+  down: { icon: TrendingDown, className: "bg-critical/10 text-critical border-critical/20" },
+  neutral: { icon: Minus, className: "bg-surface-300/10 text-text-secondary border-surface-300/20" },
+};
 
 export function AdminStatCard({
   label,
   value,
   icon: Icon,
-  accentColor = "primary",
+  accentColor = "brand",
   trend,
   subtext,
   onClick,
   className,
+  loading = false,
 }: AdminStatCardProps) {
-  const accentClasses = {
-    primary: "bg-primary/10 text-primary border-primary/20",
-    destructive: "bg-destructive/10 text-destructive border-destructive/30",
-    emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-  };
-
   return (
     <Card
       onClick={onClick}
       className={cn(
-        "border-border/80 bg-card/90 backdrop-blur-md overflow-hidden transition-all duration-200 hover:border-primary/40 hover:shadow-lg select-none",
+        "border-border bg-card overflow-hidden transition-all duration-200 hover:border-brand-500/40 hover:shadow-md select-none",
         onClick && "cursor-pointer active:scale-[0.99]",
         className
       )}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {label}
           </span>
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-xl border",
+              "flex h-8 w-8 items-center justify-center rounded-lg border",
               accentClasses[accentColor]
             )}
           >
@@ -62,30 +70,28 @@ export function AdminStatCard({
           </div>
         </div>
 
-        <div className="mt-3 space-y-1.5">
-          <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {value}
-          </h3>
+        <div className="mt-2">
+          {loading ? (
+            <div className="h-7 w-20 animate-pulse rounded bg-surface-300/50" />
+          ) : (
+            <span className="text-xl font-bold tracking-tight text-foreground">
+              {value}
+            </span>
+          )}
 
           {trend && (
-            <div className="flex items-center gap-1.5 text-xs">
+            <div className="mt-1.5 flex items-center gap-1.5">
               <span
                 className={cn(
-                  "flex items-center gap-0.5 font-semibold rounded px-1.5 py-0.5 text-[11px]",
-                  trend.isPositive
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : "bg-destructive/10 text-destructive border border-destructive/20"
+                  "inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-semibold",
+                  trendConfig[trend.direction].className
                 )}
               >
-                {trend.isPositive ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
+                {React.createElement(trendConfig[trend.direction].icon, { className: "h-2.5 w-2.5" })}
                 {trend.value}
               </span>
               {trend.description && (
-                <span className="text-muted-foreground text-[11px] truncate">
+                <span className="text-[10px] text-muted-foreground truncate">
                   {trend.description}
                 </span>
               )}
@@ -93,7 +99,7 @@ export function AdminStatCard({
           )}
 
           {subtext && (
-            <div className="text-[11px] text-muted-foreground mt-0.5">
+            <div className="mt-1 text-[10px] text-muted-foreground">
               {subtext}
             </div>
           )}

@@ -170,69 +170,57 @@ export default function OverviewDashboardPage() {
 
       {/* ─── 2. 4-Card Stat HUD Metric Row ─────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Active Alerts */}
-        <AdminStatCard
-          label="Active SOS Alerts"
-          value={isStatsLoading ? "..." : activeAlertsCount}
-          icon={AlertTriangle}
-          accentColor="destructive"
-          trend={
-            activeAlertsCount > 0
-              ? { value: "URGENT", isPositive: false, description: "Requires Immediate Triage" }
-              : { value: "SECURE", isPositive: true, description: "All Sectors Clear" }
-          }
-          subtext={
-            <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-ping inline-block" />
-              Direct GPS SOS triggers
-            </span>
-          }
-          onClick={() => router.push("/dashboard/alerts")}
-        />
+  <AdminStatCard
+    label="Active SOS Alerts"
+    value={isStatsLoading ? "..." : activeAlertsCount}
+    icon={AlertTriangle}
+    accentColor="critical"
+    trend={{
+      value: activeAlertsCount > 0 ? `${activeAlertsCount} Alerts` : "All Clear",
+      direction: activeAlertsCount > 0 ? "down" : "up",
+      description: activeAlertsCount > 0 ? "Requires attention" : "No active alerts",
+    }}
+    onClick={() => router.push("/dashboard/alerts")}
+  />
 
-        {/* Card 2: Pending SafeChat Reports */}
-        <AdminStatCard
-          label="Pending Reports"
-          value={isStatsLoading ? "..." : pendingReportsCount}
-          icon={FileText}
-          accentColor="indigo"
-          trend={{
-            value: `${pendingReportsCount} Reports`,
-            isPositive: pendingReportsCount === 0,
-            description: "Citizen incident flags",
-          }}
-          subtext="SafeChat qualitative reports"
-          onClick={() => router.push("/dashboard/reports")}
-        />
+  <AdminStatCard
+    label="Pending Reports"
+    value={isStatsLoading ? "..." : pendingReportsCount}
+    icon={FileText}
+    accentColor="purple"
+    trend={{
+      value: `${pendingReportsCount} Reports`,
+      direction: pendingReportsCount > 0 ? "down" : "up",
+      description: "Citizen incident flags",
+    }}
+    onClick={() => router.push("/dashboard/reports")}
+  />
 
-        {/* Card 3: Resolved Incidents */}
-        <AdminStatCard
-          label="Resolved Today"
-          value={isStatsLoading ? "..." : resolvedTodayCount}
-          icon={CheckCircle2}
-          accentColor="emerald"
-          trend={{
-            value: "CLOSED",
-            isPositive: true,
-            description: "Resolved within 24h",
-          }}
-          subtext="Cleared emergency actions"
-        />
+  <AdminStatCard
+    label="Resolved Today"
+    value={isStatsLoading ? "..." : resolvedTodayCount}
+    icon={CheckCircle2}
+    accentColor="success"
+    trend={{
+      value: "Closed",
+      direction: "up",
+      description: "Resolved within 24h",
+    }}
+  />
 
-        {/* Card 4: Total All Time */}
-        <AdminStatCard
-          label="Total All Time"
-          value={isStatsLoading ? "..." : totalAllTimeCount}
-          icon={BarChart3}
-          accentColor="primary"
-          subtext={
-            <span className="flex items-center gap-1 text-[11px] text-primary">
-              <Radio className="w-3 h-3" /> Station Grid 100% Operational
-            </span>
-          }
-        />
-      </div>
-
+  <AdminStatCard
+    label="Total Cases"
+    value={isStatsLoading ? "..." : totalAllTimeCount}
+    icon={BarChart3}
+    accentColor="brand"
+    subtext={
+      <span className="flex items-center gap-1 text-[10px] text-brand-400">
+        <Radio className="w-3 h-3" />
+        Station Operational
+      </span>
+    }
+  />
+</div>
       {/* ─── 3. Analytics & Incident Trends Section ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Weekly Incident Bar Chart */}

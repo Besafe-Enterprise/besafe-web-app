@@ -3,14 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Menu,
-  Map,
-  ExternalLink,
-  ChevronRight,
-  Shield,
-  Layers,
-} from "lucide-react";
+import { Menu, Map, ExternalLink, ChevronRight } from "lucide-react";
 import { IncidentPopover } from "./incident-popover";
 import { QuickMapModal } from "@/components/map/QuickMapModal";
 import { useGetAlerts } from "@/lib/hooks/dispatch/use-dispatch-data";
@@ -26,59 +19,56 @@ export function AgencyTopbar({ onMenuToggle }: AgencyTopbarProps) {
   const { data: alerts = [] } = useGetAlerts();
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
-  // Compute breadcrumbs dynamically
   const getBreadcrumbTitle = () => {
-    if (pathname === "/dashboard") return "Overview HUD";
+    if (pathname === "/dashboard") return "Overview";
     if (pathname === "/dashboard/alerts") return "Emergency Alerts";
     if (pathname === "/dashboard/reports") return "SafeChat Reports";
     if (pathname === "/dashboard/map") return "Live Vector Radar";
-    if (pathname === "/dashboard/analytics") return "Analytics & Trends";
-    if (pathname.startsWith("/dashboard/settings")) return "Agency Settings";
+    if (pathname === "/dashboard/team") return "Station Team";
+    if (pathname === "/dashboard/admin/agencies") return "Agencies Matrix";
+    if (pathname.startsWith("/dashboard/settings")) return "Settings";
     return "Command Center";
   };
 
   return (
     <>
-      <header className="relative z-40 h-16 shrink-0 bg-card/85 backdrop-blur-md border-b border-border/80 px-4 sm:px-6 flex items-center justify-between select-none">
-        {/* Left Section: Mobile Menu + Breadcrumbs */}
-        <div className="flex items-center space-x-3">
+      <header className="relative z-40 h-14 shrink-0 border-b border-border bg-card/90 px-4 flex items-center justify-between">
+        {/* Left Section */}
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onMenuToggle}
-            className="lg:hidden p-2 rounded-xl bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+            className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-200 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <nav className="flex items-center space-x-1.5 text-xs">
-            <span className="font-semibold text-muted-foreground">BeSafe</span>
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
-            <span className="font-bold text-foreground">
+          <nav className="flex items-center gap-1 text-xs">
+            <span className="font-medium text-muted-foreground">BeSafe</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/60" />
+            <span className="font-semibold text-foreground">
               {getBreadcrumbTitle()}
             </span>
           </nav>
         </div>
 
-        {/* Right Section: Smart Incident Popover + Live Map Modal + Public Link */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3">
-          {/* Consolidated Incident Popover Trigger */}
+        {/* Right Section */}
+        <div className="flex items-center gap-2">
           <IncidentPopover />
 
-          {/* Public Site Link */}
           <Link
             href="/"
             target="_blank"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/70 bg-background/50 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border bg-transparent text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-200 transition-colors"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3 h-3" />
             <span>Public Site</span>
           </Link>
 
-          {/* Quick-Map Modal Launcher */}
           <button
             type="button"
             onClick={() => setIsMapModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs font-bold shadow-md shadow-destructive/20 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-critical text-white text-xs font-bold shadow-sm hover:bg-critical/90 transition-colors"
           >
             <Map className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Live Radar</span>
@@ -86,7 +76,6 @@ export function AgencyTopbar({ onMenuToggle }: AgencyTopbarProps) {
         </div>
       </header>
 
-      {/* Quick Mapbox Telemetry Modal */}
       <QuickMapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}

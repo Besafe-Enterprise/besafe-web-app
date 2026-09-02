@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/shared/admin-page-header";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, BadgeProps } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   useGetAlerts,
@@ -51,6 +51,18 @@ export default function AlertsManagementPage() {
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAlertStatus();
   const { mutate: analyzeAlert, isPending: isAnalyzing } = useAnalyzeAlert();
   const { mutate: assignAlert, isPending: isAssigning } = useAssignAlert();
+
+
+  const getStatusVariant = (status: string) => {
+  const map: Record<string, BadgeProps["variant"]> = {
+    active: "critical",
+    acknowledged: "warning",
+    resolved: "success",
+    false_alarm: "secondary",
+    dispatched: "case-en-route",
+  };
+  return map[status] || "secondary";
+};
 
   // State
   const [inspectAlert, setInspectAlert] = useState<Alert | null>(null);
