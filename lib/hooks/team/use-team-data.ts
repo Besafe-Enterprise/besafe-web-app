@@ -6,6 +6,19 @@ import type { StaffMember, StaffCreateInput, StaffRole } from "@/types/auth";
 import type { Agency } from "@/types";
 import { toast } from "sonner";
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  const apiErr = err as ApiError;
+  return apiErr?.response?.data?.error || (err instanceof Error ? err.message : "") || fallback;
+}
+
 // 1. Fetch Station Team Members
 export function useGetAgencyTeam() {
   return useQuery<StaffMember[]>({
@@ -31,8 +44,8 @@ export function useAddTeamMember() {
       queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
       toast.success("Team member successfully added");
     },
-    onError: (err: any) => {
-      const msg = err.response?.data?.error || err.message || "Failed to add team member";
+    onError: (err: unknown) => {
+      const msg = getErrorMessage(err, "Failed to add team member");
       toast.error(msg);
     },
   });
@@ -50,8 +63,8 @@ export function useUpdateStaffRole() {
       queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
       toast.success(`Role updated to ${variables.role}`);
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || "Failed to update role");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update role"));
     },
   });
 }
@@ -68,8 +81,8 @@ export function useUpdateStaffStatus() {
       queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
       toast.success(variables.isActive ? "Access activated" : "Access revoked");
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || "Failed to update status");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update status"));
     },
   });
 }
@@ -97,8 +110,8 @@ export function useVerifyAgency() {
       queryClient.invalidateQueries({ queryKey: ["admin", "agencies"] });
       toast.success(variables.isVerified ? "Station approved & verified" : "Station verification revoked");
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || "Failed to update station status");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update station status"));
     },
   });
 }

@@ -8,6 +8,7 @@ export interface RegisterResponse {
   id: string
 }
 
+
 export const agencyAuthService = {
   login: async (credentials: AgencyLoginFormData): Promise<AuthResponse> => {
     const res = await apiClient.post<AuthResponse>("/agency/auth/login", credentials)

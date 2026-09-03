@@ -1,6 +1,9 @@
 const CACHE_NAME = "besafe-cache-v1";
 const STATIC_ASSETS = [
   "/",
+  "/field",
+  "/field/map",
+  "/field/profile",
   "/login",
   "/manifest.json",
   "/icons/icon.svg",

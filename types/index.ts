@@ -79,6 +79,7 @@ export interface Alert {
   status: AlertStatus;
   priority?: AlertPriority | string;
   incident_type?: IncidentType;
+  category?: string;
   description?: string;
   transcribed_text?: string;
   audio_url?: string;

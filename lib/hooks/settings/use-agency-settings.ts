@@ -5,6 +5,20 @@ import { agencySettingsApi } from "@/lib/api";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
 import { toast } from "sonner";
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  const apiErr = err as ApiError;
+  return apiErr?.response?.data?.error || apiErr?.response?.data?.message || fallback;
+}
+
 // 1. Update Agency Station Profile Details
 export function useUpdateAgencyDetails() {
   const queryClient = useQueryClient();
@@ -37,8 +51,8 @@ export function useUpdateAgencyDetails() {
       queryClient.invalidateQueries({ queryKey: ["agency", "me"] });
       toast.success("Station identity updated successfully");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update station details");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update station details"));
     },
   });
 }
@@ -75,8 +89,8 @@ export function useUpdateAgencyLocation() {
       queryClient.invalidateQueries({ queryKey: ["agency", "me"] });
       toast.success("Headquarters geolocation pin saved");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to save station location");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to save station location"));
     },
   });
 }
@@ -93,8 +107,8 @@ export function useUpdateAgencyPassword() {
     onSuccess: () => {
       toast.success("Access passcode updated successfully");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update passcode");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update passcode"));
     },
   });
 }

@@ -5,6 +5,20 @@ import { alertsApi, reportsApi, statsApi } from "@/lib/api";
 import type { Alert, AlertStatus, Report, DashboardStats } from "@/types";
 import { toast } from "sonner";
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  const apiErr = err as ApiError;
+  return apiErr?.response?.data?.error || apiErr?.response?.data?.message || fallback;
+}
+
 // 1. Fetch Dashboard Overview Stats (Active, Acknowledged, Resolved, Total)
 export function useGetDashboardStats() {
   return useQuery<DashboardStats>({
@@ -68,8 +82,8 @@ export function useUpdateAlertStatus() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "stats"] });
       toast.success(`Alert #${updatedAlert?.id || ""} marked as ${updatedAlert?.status || "updated"}`);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update alert status");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update alert status"));
     },
   });
 }
@@ -93,8 +107,8 @@ export function useUpdateReportStatus() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "stats"] });
       toast.success(`Report #${updatedReport?.id || ""} status updated`);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update report status");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update report status"));
     },
   });
 }
@@ -111,8 +125,8 @@ export function useAnalyzeAlert() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "alerts"] });
       toast.success(`AI Threat Analysis completed for Alert #${alertId}`);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "AI Threat Analysis failed");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "AI Threat Analysis failed"));
     },
   });
 }
@@ -129,8 +143,8 @@ export function useAnalyzeReport() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "reports"] });
       toast.success(`AI Threat Analysis completed for Report #${reportId}`);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "AI Threat Analysis failed");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "AI Threat Analysis failed"));
     },
   });
 }
@@ -155,8 +169,8 @@ export function useAssignAlert() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "alerts"] });
       toast.success(data.message || "Alert responder assignment updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to assign alert");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to assign alert"));
     },
   });
 }
@@ -181,8 +195,8 @@ export function useAssignReport() {
       queryClient.invalidateQueries({ queryKey: ["dispatch", "reports"] });
       toast.success(data.message || "Report investigator assignment updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to assign report");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to assign report"));
     },
   });
 }

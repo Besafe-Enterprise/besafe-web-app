@@ -1,4 +1,7 @@
-export type AgencyRole = "SUPER_ADMIN" | "AGENCY_ADMIN" | "DISPATCHER" | "FIELD_AGENT";
+export type AgencyRole =
+  | "AGENCY_ADMIN"
+  | "DISPATCHER"
+  | "FIELD_AGENT";
 
 export type StaffRole = "AGENCY_ADMIN" | "DISPATCHER";
 

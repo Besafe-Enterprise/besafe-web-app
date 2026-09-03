@@ -63,7 +63,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="BeSafe" />
         <meta name="theme-color" content="#070B14" />
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground font-sans">
+      <body className="root-body">
         <QueryProvider>
           {children}
           <PwaInstaller />

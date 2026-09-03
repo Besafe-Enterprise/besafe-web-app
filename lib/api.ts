@@ -1,15 +1,16 @@
 import { apiClient } from "./api/client"
-import type { Agency, Alert, AlertStatus, DashboardStats, Report } from "@/types"
-import type { StaffMember, StaffCreateInput, StaffRole } from "@/types/auth"
+import type { Agency, AIAnalysis, Alert, AlertStatus, DashboardStats, Report } from "@/types"
+import type { AgencyProfile, StaffMember, StaffCreateInput, StaffRole } from "@/types/auth"
+import type { AgencyRegisterFormData } from "@/lib/validations/auth.schema"
 
 export { apiClient }
 
 export const authApi = {
   login: async (credentials: { email: string; password?: string }) => {
-    const res = await apiClient.post<{ token: string; must_change_password?: boolean; agency: Agency; user?: any }>("/agency/auth/login", credentials)
+    const res = await apiClient.post<{ token: string; must_change_password?: boolean; agency: Agency; user?: AgencyProfile }>("/agency/auth/login", credentials)
     return res.data
   },
-  register: async (agencyData: any) => {
+  register: async (agencyData: AgencyRegisterFormData) => {
     const res = await apiClient.post<{ success: boolean; message: string; id: string }>("/auth/register", agencyData)
     return res.data
   },
@@ -48,7 +49,7 @@ export const alertsApi = {
     return res.data
   },
   analyzeAlert: async (alertId: string | number) => {
-    const res = await apiClient.post<{ success: boolean; analysis: any }>(`/alerts/${alertId}/analyze`)
+    const res = await apiClient.post<{ success: boolean; analysis: AIAnalysis }>(`/alerts/${alertId}/analyze`)
     return res.data
   },
 }
@@ -74,7 +75,7 @@ export const reportsApi = {
     return res.data
   },
   analyzeReport: async (reportId: string | number) => {
-    const res = await apiClient.post<{ success: boolean; analysis: any }>(`/agency/reports/${reportId}/analyze`)
+    const res = await apiClient.post<{ success: boolean; analysis: AIAnalysis }>(`/agency/reports/${reportId}/analyze`)
     return res.data
   },
 }

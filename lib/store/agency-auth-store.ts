@@ -62,7 +62,7 @@ export const useAgencyAuthStore = create<AgencyAuthStore>()(
       isAgencyAdmin: () => {
         const user = get().user
         if (!user) return false
-        return user.role === "AGENCY_ADMIN" || user.role === "SUPER_ADMIN"
+        return user.role === "AGENCY_ADMIN"
       },
 
       isDispatcher: () => {

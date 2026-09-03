@@ -53,6 +53,22 @@ export default function LocationMapPicker({
   const [isLocating, setIsLocating] = useState(false);
   const [showManualInputs, setShowManualInputs] = useState(false);
 
+  // Reverse Geocoding to get location label
+  const reverseGeocode = async (longitude: number, latitude: number) => {
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&types=address,poi,neighborhood,locality,place`
+      );
+      const data = await res.json();
+      if (data.features && data.features.length > 0) {
+        const placeName = data.features[0].place_name;
+        setSelectedPlaceName(placeName);
+      }
+    } catch {
+      // Ignore reverse geocode failures
+    }
+  };
+
   // Initialize Mapbox map
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -158,22 +174,6 @@ export default function LocationMapPicker({
       }
     }
   }, [lat, lng]);
-
-  // Reverse Geocoding to get location label
-  const reverseGeocode = async (longitude: number, latitude: number) => {
-    try {
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&types=address,poi,neighborhood,locality,place`
-      );
-      const data = await res.json();
-      if (data.features && data.features.length > 0) {
-        const placeName = data.features[0].place_name;
-        setSelectedPlaceName(placeName);
-      }
-    } catch {
-      // Ignore reverse geocode failures
-    }
-  };
 
   // Forward Geocoding Search
   const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

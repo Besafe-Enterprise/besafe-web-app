@@ -38,6 +38,15 @@ import {
 import { toast } from "sonner";
 import type { ApiFieldError } from "@/types/auth";
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+}
+
 // Dynamic import for Mapbox Location Picker to bypass SSR
 const LocationMapPicker = dynamic(
   () => import("@/components/map/LocationMapPicker"),
@@ -125,7 +134,7 @@ function AgencyRegisterWizard() {
           { email: data.email, password: data.password },
           {
             onSuccess: () => {
-              router.push("/dashboard");
+              router.push("/operations");
             },
             onError: () => {
               router.push("/login?registered=true");
@@ -133,10 +142,11 @@ function AgencyRegisterWizard() {
           }
         );
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
+        const apiErr = err as ApiError;
         const message =
-          err?.response?.data?.error ||
-          err?.response?.data?.message ||
+          apiErr?.response?.data?.error ||
+          apiErr?.response?.data?.message ||
           "Registration failed. Please check your information.";
         const lower = message.toLowerCase();
 
@@ -347,7 +357,7 @@ function AgencyRegisterWizard() {
                   <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-start gap-2.5">
                     <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                     <span>
-                      BeSafe's geospatial proximity engine automatically routes distress alerts within your station's operational radius.
+                      BeSafe&apos;s geospatial proximity engine automatically routes distress alerts within your station&apos;s operational radius.
                     </span>
                   </div>
                 </div>

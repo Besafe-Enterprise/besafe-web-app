@@ -22,22 +22,26 @@ export function useAgencyGetMe(options = {}) {
         setUser(profile)
         if (profile.agency) {
           setAgency(profile.agency)
-        } else if (profile.role === "AGENCY_ADMIN" || profile.role === "SUPER_ADMIN") {
+        } else if (profile.role === "AGENCY_ADMIN") {
           setAgency(profile)
         }
         return profile
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          clearAuth()
-          destroyCookie(null, "agencyAccessToken", { path: "/" })
-          destroyCookie(null, "agencyRefreshToken", { path: "/" })
+      } catch (error: unknown) {
+        if (error instanceof Error && "response" in error) {
+          const resp = (error as { response?: { status?: number } }).response;
+          if (resp?.status === 401) {
+            clearAuth()
+            destroyCookie(null, "agencyAccessToken", { path: "/" })
+            destroyCookie(null, "agencyRefreshToken", { path: "/" })
+          }
         }
         throw error
       }
     },
     staleTime: 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error: unknown) => {
+      const resp = (error as { response?: { status?: number } }).response;
+      if (resp?.status === 401) return false
       return failureCount < 2
     },
     refetchOnWindowFocus: false,
