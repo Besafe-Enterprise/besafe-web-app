@@ -1,5 +1,5 @@
 import { apiClient } from "./api/client"
-import type { Agency, AIAnalysis, Alert, AlertStatus, DashboardStats, Report } from "@/types"
+import type { Agency, AIAnalysis, Alert, AlertStatus, DashboardStats, Report, FieldEvidenceItem, FieldReport, FieldNotification, FieldCheckIn } from "@/types"
 import type { AgencyProfile, StaffMember, StaffCreateInput, StaffRole } from "@/types/auth"
 import type { AgencyRegisterFormData } from "@/lib/validations/auth.schema"
 
@@ -148,6 +148,91 @@ export const fieldWorkerApi = {
     note?: string;
   }) => {
     const res = await apiClient.post<{ success: boolean; message: string }>("/agency/staff/register", data)
+    return res.data
+  },
+
+  // ── Authenticated FIELD_AGENT endpoints ──
+
+  /** Get combined profile + latest check-in + unread count. */
+  getMe: async () => {
+    const res = await apiClient.get("/field/me")
+    return res.data
+  },
+
+  /** Update profile (name, phone_number, avatar_url). */
+  updateProfile: async (data: { name?: string; phone_number?: string; avatar_url?: string }) => {
+    const res = await apiClient.patch<{ success: boolean; profile: StaffMember }>("/field/profile", data)
+    return res.data
+  },
+
+  /** Upload avatar (multipart). */
+  uploadAvatar: async (file: File) => {
+    const form = new FormData()
+    form.append("avatar", file)
+    const res = await apiClient.patch<{ success: boolean; profile: StaffMember }>("/field/profile", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    return res.data
+  },
+
+  /** Save push token. */
+  savePushToken: async (token: string) => {
+    const res = await apiClient.post("/field/push-token", { push_token: token })
+    return res.data
+  },
+
+  /** List notifications. */
+  getNotifications: async () => {
+    const res = await apiClient.get<{ notifications: FieldNotification[]; unread: number }>("/field/notifications")
+    return res.data
+  },
+
+  /** Mark notifications read. */
+  markNotificationsRead: async (ids?: string[]) => {
+    const res = await apiClient.post("/field/notifications/read", { notification_ids: ids })
+    return res.data
+  },
+
+  /** Post location check-in. */
+  postLocation: async (data: { lat: number; lng: number; status?: string; note?: string; alert_id?: string }) => {
+    const res = await apiClient.post<{ success: boolean; checkin_id: string }>("/field/location", data)
+    return res.data
+  },
+
+  /** Get own check-in history. */
+  getLocationHistory: async () => {
+    const res = await apiClient.get<{ checkins: FieldCheckIn[] }>("/field/location")
+    return res.data
+  },
+
+  /** Upload case evidence (multipart). */
+  uploadEvidence: async (alertId: string, file: File, fileType: string) => {
+    const form = new FormData()
+    form.append("file", file)
+    form.append("type", fileType)
+    const res = await apiClient.post<{ success: boolean; evidence: FieldEvidenceItem }>(
+      `/field/cases/${alertId}/evidence`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    )
+    return res.data
+  },
+
+  /** Add case report / note. */
+  addReport: async (alertId: string, data: { title?: string; body: string; progress?: string }) => {
+    const res = await apiClient.post<{ success: boolean; report: FieldReport }>(
+      `/field/cases/${alertId}/reports`,
+      data
+    )
+    return res.data
+  },
+
+  /** Update case report / note. */
+  updateReport: async (alertId: string, reportId: string, data: { title?: string; body?: string; progress?: string }) => {
+    const res = await apiClient.patch<{ success: boolean; updated: Partial<FieldReport> }>(
+      `/field/cases/${alertId}/reports/${reportId}`,
+      data
+    )
     return res.data
   },
 }

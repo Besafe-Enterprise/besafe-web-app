@@ -151,7 +151,7 @@ export default function TeamPage() {
           <EmptyState title="No team members" description="Invite your first agency member to begin." />
         </div>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{ padding: "var(--space-4)", overflow: "hidden", }}>
           <table className="data-table">
             <thead>
               <tr>

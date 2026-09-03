@@ -11,7 +11,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://besafe-server-
 let globalSocket: Socket | null = null
 
 export function useSocket() {
-  const { agency, token } = useAgencyAuthStore()
+  const { agency, token, user } = useAgencyAuthStore()
   const { addAlert, updateLocation, updateAlert, soundAlertsEnabled } = useAlertStore()
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -53,6 +53,10 @@ export function useSocket() {
     socket.on("connect", () => {
       console.log("🟢 [Socket.IO] Connected to BeSafe Emergency Dispatcher")
       socket.emit("join", { agency_id: agency.id })
+      // FIELD_AGENT joins personal room for direct notifications
+      if (user?.role === "FIELD_AGENT" && token) {
+        socket.emit("field:join", { token })
+      }
     })
 
     socket.on("new_alert", (alert: Alert) => {
@@ -115,6 +119,41 @@ export function useSocket() {
       }
     })
 
+    // FIELD_AGENT personal notifications
+    socket.on("notification", (n: {
+      id: string;
+      title: string;
+      body: string;
+      type: string;
+      data?: Record<string, unknown>;
+      agency_id?: string;
+    }) => {
+      console.log("🔔 [Socket.IO] Field notification:", n)
+      // The in-app notification store is queried via API; optionally we could push to a Zustand store here
+    })
+
+    // Field worker location update (broadcast to agency room)
+    socket.on("field_location_update", (raw: {
+      staff_id: string;
+      lat: number;
+      lng: number;
+      status?: string;
+      recorded_at: string;
+    }) => {
+      console.log("📍 [Socket.IO] Field location update:", raw)
+      // Could update a live map store for field workers
+    })
+
+    // Field worker progress update
+    socket.on("field_progress", (raw: {
+      staff_id: string;
+      alert_id?: string;
+      status?: string;
+      recorded_at: string;
+    }) => {
+      console.log("📊 [Socket.IO] Field progress:", raw)
+    })
+
     socket.on("disconnect", (reason) => {
       console.warn("🔴 [Socket.IO] Disconnected:", reason)
     })
@@ -125,9 +164,12 @@ export function useSocket() {
       socket.off("location_update")
       socket.off("alert_status_update")
       socket.off("alert_assigned")
+      socket.off("notification")
+      socket.off("field_location_update")
+      socket.off("field_progress")
       socket.off("disconnect")
     }
-  }, [agency?.id, token])
+  }, [agency?.id, token, user?.role])
 
   return { socket: globalSocket }
 }

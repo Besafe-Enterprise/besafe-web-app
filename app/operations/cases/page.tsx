@@ -147,8 +147,8 @@ function CasesContent() {
           />
         </div>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table className="data-table">
+        <div className="card" style={{ padding: "var(--space-4)", overflow: "hidden",overflowX: "auto" }}>
+          <table className="data-table" style={{ width: "100vw", borderCollapse: "collapse", padding: "var(--space-4)" }}>
             <thead>
               <tr>
                 <th>Case ID</th>
