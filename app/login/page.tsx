@@ -134,16 +134,6 @@ function AgencyLoginForm() {
 
         toast.error(message);
 
-        const routingMsg =
-          lower.includes("agency console") ||
-          lower.includes("field worker sign in") ||
-          lower.includes("field sign in") ||
-          lower.includes("dispatcher");
-
-        if (routingMsg) {
-          return;
-        }
-
         if (
           lower.includes("email") ||
           lower.includes("agency not found") ||
@@ -341,13 +331,6 @@ function AgencyLoginForm() {
               )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="login-form">
-                {apiError?.field === "root" && (
-                  <div className="login-alert">
-                    <ShieldAlert size={16} style={{ flexShrink: 0 }} />
-                    <span>{apiError.message}</span>
-                  </div>
-                )}
-
                 <div className="login-field">
                   <Label htmlFor="email">Email</Label>
                   <div className="input-wrapper">
