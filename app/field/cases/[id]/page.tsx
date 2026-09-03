@@ -1,282 +1,195 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useGetAlerts, useUpdateAlertStatus } from "@/lib/hooks/dispatch/use-dispatch-data";
-import { useAlertStore } from "@/stores/useAlertStore";
-import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
+import { ArrowLeft, MapPin, Phone, FileText, AlertTriangle, Navigation } from "lucide-react";
 import { Badge } from "@/components/operations/shared/Badge";
 import { Skeleton } from "@/components/operations/shared/LoadingSkeleton";
-import { ArrowLeft, MapPin, AlertTriangle, Phone, FileText } from "lucide-react";
+import { WorkerStatusStepper } from "@/components/field/shared/WorkerStatusStepper";
+import { ErrorRetry } from "@/components/field/shared/ErrorRetry";
+import { useUpdateAlertStatus } from "@/lib/hooks/dispatch/use-dispatch-data";
+import { useFieldAlert } from "@/lib/field/use-field-data";
 import {
-  displayPriority,
-  incidentLabel,
-  locationLabel,
-  formatShortDate,
-} from "@/lib/operations/utils";
-import type { Alert, AlertStatus } from "@/types";
-import "@/styles/field.css";
-
-type FieldWorkerStage = "active" | "en_route" | "on_site" | "resolved";
-
-function resolveWorkerStage(alert: Alert): FieldWorkerStage {
-  if (alert.status === "resolved") return "resolved";
-  if (alert.status === "dispatched") return "on_site";
-  if (alert.status === "acknowledged") return "en_route";
-  return "active";
-}
-
-function mapWorkerStageToApiStatus(stage: FieldWorkerStage): AlertStatus {
-  const map: Record<FieldWorkerStage, AlertStatus> = {
-    active: "acknowledged",
-    en_route: "dispatched",
-    on_site: "resolved",
-    resolved: "resolved",
-  };
-  return map[stage];
-}
+  workerStageFor,
+  workerActionFor,
+  NEXT_STATUS,
+  backendStatusLabel,
+  statusBadgeVariant,
+  priorityVariant,
+  incidentCoords,
+} from "@/lib/field/utils";
+import { incidentLabel, locationLabel, formatShortDate } from "@/lib/operations/utils";
 
 export default function FieldCaseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const caseId = params?.id as string;
-  useAgencyAuthStore();
-  const { data: alerts, isLoading } = useGetAlerts();
-  const realtimeAlerts = useAlertStore((s) => s.alerts);
+  const { alert, isLoading, isError, refetch } = useFieldAlert(caseId);
   const updateStatus = useUpdateAlertStatus();
 
-  const merged = React.useMemo(() => {
-    const base = alerts || [];
-    const rt = realtimeAlerts || [];
-    const map = new Map<string, Alert>();
-    for (const a of [...rt, ...base]) {
-      map.set(String(a.id), a);
-    }
-    return Array.from(map.values());
-  }, [alerts, realtimeAlerts]);
+  const stage = workerStageFor(alert);
+  const action = workerActionFor(stage);
+  const nextStatus = NEXT_STATUS[stage];
 
-  const alert = React.useMemo(
-    () => merged.find((a) => String(a.id) === String(caseId)) || null,
-    [merged, caseId]
-  );
-
-  const [localStage, setLocalStage] = useState<FieldWorkerStage | null>(null);
-
-  const workerStage: FieldWorkerStage = localStage || (alert ? resolveWorkerStage(alert) : "active");
-
-  const handleAdvance = useCallback(() => {
-    if (!alert) return;
-
-    const nextStageMap: Record<FieldWorkerStage, FieldWorkerStage> = {
-      active: "en_route",
-      en_route: "on_site",
-      on_site: "resolved",
-      resolved: "resolved",
-    };
-
-    const nextStage = nextStageMap[workerStage];
-    if (nextStage === workerStage) return;
-
-    setLocalStage(nextStage);
-
-    const apiStatus = mapWorkerStageToApiStatus(nextStage);
-    updateStatus.mutate(
-      { id: alert.id, status: apiStatus },
-      {
-        onError: () => {
-          setLocalStage(null);
-        },
-      }
-    );
-  }, [alert, workerStage, updateStatus]);
-
-  const actionConfig: Record<
-    FieldWorkerStage,
-    { label: string; btnClass: string } | null
-  > = {
-    active: { label: "Accept & En Route", btnClass: "field-action-btn--accept" },
-    en_route: { label: "Arrived On Site", btnClass: "field-action-btn--on-site" },
-    on_site: { label: "Resolve Case", btnClass: "field-action-btn--resolve" },
-    resolved: null,
+  const handleAdvance = () => {
+    if (!alert || !nextStatus) return;
+    updateStatus.mutate({ id: alert.id, status: nextStatus });
   };
 
-  const currentAction = actionConfig[workerStage];
+  const coords = alert ? incidentCoords(alert) : null;
 
   if (isLoading) {
     return (
-      <div className="field-main">
-        <Skeleton height={20} width="30%" />
+      <div className="field-case-view">
+        <Skeleton height={22} width="40%" />
         <div style={{ marginTop: 16 }}>
-          <Skeleton height={16} width="100%" />
-          <Skeleton height={16} width="80%" />
-          <Skeleton height={16} width="60%" />
+          <Skeleton height={120} width="100%" />
+          <Skeleton height={80} width="100%" />
         </div>
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorRetry onRetry={() => refetch()} message="We couldn't load this case." />;
   }
 
   if (!alert) {
     return (
-      <div className="field-main">
-        <button
-          onClick={() => router.back()}
-          className="field-action-btn field-action-btn--en-route"
-          style={{ marginBottom: 16, width: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}
-        >
-          <ArrowLeft width={16} height={16} /> Back
-        </button>
-        <div className="field-empty">Case not found.</div>
+      <div className="field-case-view">
+        <div className="field-case-view__empty">
+          <AlertTriangle width={36} height={36} />
+          <h2>Case not found</h2>
+          <p>This case isn&apos;t assigned to you, or it no longer exists.</p>
+          <button className="field-primary-btn field-primary-btn--block" onClick={() => router.replace("/field")}>
+            Back to Home
+          </button>
+        </div>
       </div>
     );
   }
 
-  const priority = displayPriority(alert.priority);
   const incident = incidentLabel(alert.incident_type, alert.description);
   const location = locationLabel(alert);
+  const priority = priorityVariant(alert.priority);
+  const statusLabel = backendStatusLabel(alert.status);
 
-  const timelineEvents: { label: string; time: string | null }[] = [
+  const timeline: { label: string; time: string | null }[] = [
     { label: "Incident reported", time: alert.created_at },
     alert.assigned_at ? { label: `Assigned to ${alert.assigned_staff_name || "you"}`, time: alert.assigned_at } : null,
-    workerStage !== "active" ? { label: "Accepted & en route", time: alert.updated_at } : null,
-    workerStage === "on_site" || workerStage === "resolved" ? { label: "Arrived on site", time: alert.updated_at } : null,
-    alert.status === "resolved" ? { label: "Case resolved", time: alert.resolved_at || alert.updated_at } : null,
+    stage !== "active" ? { label: "Assignment accepted", time: alert.updated_at } : null,
+    alert.status === "resolved" ? { label: "Case completed", time: alert.resolved_at || alert.updated_at } : null,
   ].filter(Boolean) as { label: string; time: string | null }[];
 
   return (
-    <div className="field-main" style={{ padding: 0 }}>
-      <div className="field-case-detail__header">
-        <button
-          onClick={() => router.back()}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--color-brand)",
-            fontSize: "var(--text-sm)",
-            fontWeight: "var(--weight-semibold)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            padding: 0,
-            marginBottom: 8,
-          }}
-        >
-          <ArrowLeft width={16} height={16} /> Back to cases
+    <div className="field-case-view">
+      <div className="field-case-view__topbar">
+        <button className="field-case-view__back" onClick={() => router.back()}>
+          <ArrowLeft width={18} height={18} />
+          <span>Back</span>
         </button>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-bold)", color: "var(--color-text-primary)" }}>
-            Case #{alert.id}
-          </span>
-          <Badge variant={workerStage} tone="status">
-            {workerStage === "active" ? "assigned" : workerStage}
+        <div className="field-case-view__status">
+          <Badge variant={statusBadgeVariant(alert.status)} tone="status">
+            {statusLabel}
           </Badge>
         </div>
       </div>
 
-      <div className="field-case-detail__section">
-        <div className="field-case-detail__label">Incident</div>
-        <div className="field-case-detail__value" style={{ fontWeight: "var(--weight-semibold)" }}>
-          {incident}
-        </div>
+      <div className="field-case-view__title">
+        <h1>Case #{alert.id}</h1>
+        <p>{incident}</p>
       </div>
 
-      <div className="field-case-detail__section">
-        <div className="field-case-detail__label">Priority</div>
-        <div className="field-case-detail__value">
+      <div className="field-case-view__stepper-wrap">
+        <WorkerStatusStepper stage={stage} />
+      </div>
+
+      <div className="field-detail-card">
+        <div className="field-detail-row">
+          <span className="field-detail-row__label">Priority</span>
           <Badge variant={priority} tone="priority">
-            {priority}
+            {alert.priority || "medium"}
           </Badge>
         </div>
+        <div className="field-detail-row">
+          <span className="field-detail-row__label">Location</span>
+          <span className="field-detail-row__value">
+            <MapPin width={14} height={14} /> {location}
+          </span>
+        </div>
+        {coords && (
+          <button className="field-inline-btn" onClick={() => router.push(`/field/map?case=${alert.id}`)}>
+            <Navigation width={14} height={14} /> Open Map for directions
+          </button>
+        )}
       </div>
 
       {alert.description && (
-        <div className="field-case-detail__section">
-          <div className="field-case-detail__label">Description</div>
-          <div className="field-case-detail__value">{alert.description}</div>
+        <div className="field-detail-section">
+          <div className="field-detail-section__label">Description</div>
+          <p className="field-detail-section__text">{alert.description}</p>
         </div>
       )}
 
       {alert.transcribed_text && (
-        <div className="field-case-detail__section">
-          <div className="field-case-detail__label">
-            <FileText width={12} height={12} style={{ display: "inline", marginRight: 4 }} />
-            Transcription
+        <div className="field-detail-section">
+          <div className="field-detail-section__label">
+            <FileText width={14} height={14} /> Transcription
           </div>
-          <div className="field-case-detail__value" style={{ fontStyle: "italic" }}>
+          <p className="field-detail-section__text" style={{ fontStyle: "italic" }}>
             {alert.transcribed_text}
-          </div>
+          </p>
         </div>
       )}
-
-      <div className="field-case-detail__section">
-        <div className="field-case-detail__label">
-          <MapPin width={12} height={12} style={{ display: "inline", marginRight: 4 }} />
-          Location
-        </div>
-        <div className="field-case-detail__value">{location}</div>
-      </div>
 
       {(alert.user?.name || alert.user_phone) && (
-        <div className="field-case-detail__section">
-          <div className="field-case-detail__label">
-            <Phone width={12} height={12} style={{ display: "inline", marginRight: 4 }} />
-            Reporter
+        <div className="field-detail-section">
+          <div className="field-detail-section__label">
+            <Phone width={14} height={14} /> Reporter
           </div>
-          <div className="field-case-detail__value">
+          <p className="field-detail-section__text">
             {alert.user?.name || "Unknown"}
             {alert.user_phone && (
-              <span style={{ color: "var(--color-text-tertiary)", marginLeft: 8 }}>
-                {alert.user_phone}
-              </span>
+              <span className="field-detail-section__muted"> {alert.user_phone}</span>
             )}
-          </div>
+          </p>
         </div>
       )}
 
-      <div className="field-case-detail__section">
-        <div className="field-case-detail__label">Timeline</div>
-        <div className="field-case-detail__timeline">
-          {timelineEvents.map((event, idx) => (
-            <div key={idx} className="field-case-detail__timeline-item">
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div className="field-case-detail__timeline-dot" />
-                {idx < timelineEvents.length - 1 && (
-                  <div className="field-case-detail__timeline-line" style={{ flex: 1 }} />
-                )}
+      <div className="field-detail-section">
+        <div className="field-detail-section__label">Timeline</div>
+        <div className="field-timeline">
+          {timeline.map((event, idx) => (
+            <div key={idx} className="field-timeline__item">
+              <div className="field-timeline__col">
+                <div className="field-timeline__dot" />
+                {idx < timeline.length - 1 && <div className="field-timeline__line" />}
               </div>
-              <div style={{ paddingBottom: idx < timelineEvents.length - 1 ? 16 : 0 }}>
-                <div className="field-case-detail__timeline-text" style={{ fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>
-                  {event.label}
-                </div>
-                <div className="field-case-detail__timeline-text">
-                  {formatShortDate(event.time)}
-                </div>
+              <div>
+                <div className="field-timeline__text">{event.label}</div>
+                <div className="field-timeline__time">{formatShortDate(event.time)}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {currentAction && (
-        <div style={{ padding: "var(--space-4)" }}>
+      <div className="field-action-bar">
+        {action ? (
           <button
-            className={`field-action-btn ${currentAction.btnClass}`}
+            className={`field-primary-btn field-primary-btn--block field-primary-btn--${action.tone}`}
             onClick={handleAdvance}
             disabled={updateStatus.isPending}
           >
-            {updateStatus.isPending ? "Updating..." : currentAction.label}
+            {updateStatus.isPending ? "Updating..." : action.label}
           </button>
-        </div>
-      )}
-
-      {workerStage === "resolved" && (
-        <div style={{ padding: "var(--space-4)" }}>
-          <div className="field-empty" style={{ padding: "var(--space-4)" }}>
-            <AlertTriangle width={24} height={24} style={{ color: "var(--color-success)", marginRight: 8 }} />
-            Case resolved successfully
+        ) : (
+          <div className="field-success-banner">
+            <AlertTriangle width={18} height={18} />
+            <span>This case is complete. No further action needed.</span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

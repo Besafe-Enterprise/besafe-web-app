@@ -32,12 +32,12 @@
   background: var(--color-brand);
   color: var(--color-text-inverse);
   border-color: var(--color-brand);
-  box-shadow: 0 1px 2px rgba(27, 58, 107, 0.2);
+  box-shadow: 0 1px 2px rgba(2, 6, 16, 0.4);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--color-brand-hover);
   border-color: var(--color-brand-hover);
-  box-shadow: 0 2px 6px rgba(27, 58, 107, 0.25);
+  box-shadow: 0 2px 8px rgba(59, 111, 232, 0.45);
 }
 
 .btn--secondary {
@@ -124,12 +124,12 @@
 .badge--case-triaged { background: var(--color-warning-bg); color: var(--color-case-triaged); border: 1px solid var(--color-high-border); }
 .badge--case-assigned { background: var(--color-info-bg); color: var(--color-case-assigned); border: 1px solid var(--color-medium-border); }
 .badge--case-accepted { background: var(--color-info-bg); color: var(--color-case-accepted); border: 1px solid var(--color-medium-border); }
-.badge--case-en-route { background: var(--color-on-site-bg); color: var(--color-case-en-route); border: 1px solid #ddd6fe; }
-.badge--case-on-site { background: var(--color-on-site-bg); color: var(--color-case-on-site); border: 1px solid #ddd6fe; }
+.badge--case-en-route { background: var(--color-on-site-bg); color: var(--color-case-en-route); border: 1px solid rgba(167, 139, 250, 0.4); }
+.badge--case-on-site { background: var(--color-on-site-bg); color: var(--color-case-on-site); border: 1px solid rgba(167, 139, 250, 0.4); }
 .badge--case-investigating { background: var(--color-info-bg); color: var(--color-case-investigating); border: 1px solid var(--color-medium-border); }
 .badge--case-pending-review { background: var(--color-warning-bg); color: var(--color-case-pending-review); border: 1px solid var(--color-high-border); }
 .badge--case-changes-requested { background: var(--color-error-bg); color: var(--color-case-changes-requested); border: 1px solid var(--color-critical-border); }
-.badge--case-resolved { background: var(--color-success-bg); color: var(--color-case-resolved); border: 1px solid #a7f3d0; }
+.badge--case-resolved { background: var(--color-success-bg); color: var(--color-case-resolved); border: 1px solid rgba(52, 211, 153, 0.4); }
 .badge--case-closed { background: var(--color-bg); color: var(--color-case-closed); border: 1px solid var(--color-border-strong); }
 
 /* Worker status variants */
@@ -169,7 +169,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-tertiary);
-  background: #FAFBFC;
+  background: var(--color-surface-raised);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
   position: sticky;
@@ -178,13 +178,13 @@
 }
 
 .data-table tbody tr {
-  border-bottom: 1px solid #F0F1F3;
+  border-bottom: 1px solid var(--color-border);
   transition: background var(--transition-fast);
   cursor: pointer;
 }
 
 .data-table tbody tr:nth-child(even) {
-  background: #FAFBFC;
+  background: var(--color-surface-sunken);
 }
 
 .data-table tbody tr:last-child {
@@ -301,9 +301,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    #EEF0F3 0%,
-    #F8F9FB 50%,
-    #EEF0F3 100%
+    #1B2334 0%,
+    #2A3447 50%,
+    #1B2334 100%
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.4s infinite;
@@ -408,7 +408,7 @@
 .input:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgba(27, 58, 107, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 111, 232, 0.2);
 }
 .input::placeholder {
   color: var(--color-text-tertiary);

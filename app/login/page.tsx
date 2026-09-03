@@ -56,8 +56,9 @@ function AgencyLoginForm() {
   const searchParams = useSearchParams();
 
   const roleParam = searchParams.get("role");
+  const isFieldOnly = roleParam === "field";
   const [loginRole, setLoginRole] = useState<"admin" | "field">(
-    roleParam === "field" ? "field" : "admin"
+    isFieldOnly ? "field" : "admin"
   );
 
   const { mutate: login, isPending } = useAgencyLogin();
@@ -79,19 +80,26 @@ function AgencyLoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<AgencyLoginFormData>({
     resolver: zodResolver(agencyLoginSchema),
     defaultValues: {
       email: "",
       password: "",
+      role: isFieldOnly ? "field" : "admin",
     },
   });
 
   const getRedirectTarget = () => {
     const paramRedirect = searchParams.get("redirect");
-    if (paramRedirect) return paramRedirect;
-    return loginRole === "field" ? "/field" : "/operations";
+    if (paramRedirect) {
+      // Normalize bare /operations (no page there) to Command Center
+      return paramRedirect === "/operations" || paramRedirect === "/operations/"
+        ? "/operations/command-center"
+        : paramRedirect;
+    }
+    return loginRole === "field" ? "/field" : "/operations/command-center";
   };
 
   const onSubmit: SubmitHandler<AgencyLoginFormData> = (data) => {
@@ -104,7 +112,7 @@ function AgencyLoginForm() {
           setStaffInfo({
             id: String(res.user?.id || ""),
             email: res.user?.email || data.email,
-            name: res.user?.name || "Dispatcher",
+            name: res.user?.name || "Team member",
           });
           toast.info("First-Time Sign In", {
             description: "Please configure your permanent password.",
@@ -125,6 +133,16 @@ function AgencyLoginForm() {
         const lower = message.toLowerCase();
 
         toast.error(message);
+
+        const routingMsg =
+          lower.includes("agency console") ||
+          lower.includes("field worker sign in") ||
+          lower.includes("field sign in") ||
+          lower.includes("dispatcher");
+
+        if (routingMsg) {
+          return;
+        }
 
         if (
           lower.includes("email") ||
@@ -287,7 +305,8 @@ function AgencyLoginForm() {
         ) : (
           <Card className="login-card">
             <CardContent>
-              <div className="login-tabs">
+              {!isFieldOnly && (
+                <div className="login-tabs">
                 <button
                   type="button"
                   className={`login-tab ${
@@ -295,7 +314,10 @@ function AgencyLoginForm() {
                       ? "login-tab--active"
                       : "login-tab--inactive"
                   }`}
-                  onClick={() => setLoginRole("admin")}
+                  onClick={() => {
+                    setLoginRole("admin");
+                    setValue("role", "admin");
+                  }}
                 >
                   <Building2 size={14} />
                   Agency Console
@@ -307,12 +329,16 @@ function AgencyLoginForm() {
                       ? "login-tab--active"
                       : "login-tab--inactive"
                   }`}
-                  onClick={() => setLoginRole("field")}
+                  onClick={() => {
+                    setLoginRole("field");
+                    setValue("role", "field");
+                  }}
                 >
                   <HardHat size={14} />
                   Field Worker
                 </button>
               </div>
+              )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="login-form">
                 {apiError?.field === "root" && (
@@ -405,9 +431,14 @@ function AgencyLoginForm() {
 
         <div className="login-footer">
           <p>
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="login-footer-link">
-              Register your agency
+            {isFieldOnly
+              ? "Need to join an agency? "
+              : "Don't have an account? "}
+            <Link
+              href={isFieldOnly ? "/register?role=field" : "/register"}
+              className="login-footer-link"
+            >
+              {isFieldOnly ? "Apply as a field worker" : "Register your agency"}
             </Link>
           </p>
           <span className="login-footer-meta">

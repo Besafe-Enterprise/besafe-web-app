@@ -68,7 +68,7 @@ export function useAgencyLogin() {
         name: data.user?.name || data.agency?.name || "Operator",
         email: data.user?.email || data.agency?.email || "",
         phone_number: data.user?.phone_number || data.agency?.phone_number || "",
-        role: data.user?.role || data.agency?.role || "DISPATCHER",
+        role: data.user?.role || data.agency?.role || "AGENCY_ADMIN",
         agency_id: data.user?.agency_id || data.agency?.id,
         agency: data.agency,
       }
@@ -122,7 +122,7 @@ export function useChangeInitialPassword() {
   })
 }
 
-export function useAgencyLogout() {
+export function useAgencyLogout(redirectTo = "/login") {
   const clearAuth = useAgencyAuthStore((s) => s.clearAuth)
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -140,7 +140,7 @@ export function useAgencyLogout() {
         localStorage.removeItem("besafe_agency_profile")
       }
       queryClient.clear()
-      router.push("/login")
+      router.push(redirectTo)
     },
   })
 }

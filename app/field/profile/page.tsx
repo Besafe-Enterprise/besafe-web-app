@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useGetAlerts } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
-import { User, Shield, Briefcase, CheckCircle } from "lucide-react";
+import { useAgencyLogout } from "@/lib/hooks/auth/use-agency-auth";
+import { User, Shield, Briefcase, CheckCircle, LogOut } from "lucide-react";
 import "@/styles/field.css";
 
 export default function FieldProfilePage() {
   const { user, agency } = useAgencyAuthStore();
+  const { mutate: logout, isPending: isLoggingOut } = useAgencyLogout("/login?role=field");
   const { data: alerts } = useGetAlerts();
   const [onDuty, setOnDuty] = useState(true);
 
@@ -83,6 +85,15 @@ export default function FieldProfilePage() {
             {onDuty ? "ON DUTY" : "OFF DUTY"}
           </button>
         </div>
+
+        <button
+          className="field-profile__logout"
+          onClick={() => logout()}
+          disabled={isLoggingOut}
+        >
+          <LogOut width={16} height={16} />
+          <span>{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
+        </button>
       </div>
     </div>
   );

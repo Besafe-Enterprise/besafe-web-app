@@ -153,11 +153,11 @@
 .stepper__dot--current {
   border-color: var(--color-brand);
   background: var(--color-brand);
-  box-shadow: 0 0 0 4px rgba(27, 58, 107, 0.12);
+  box-shadow: 0 0 0 4px rgba(59, 111, 232, 0.3);
 }
 @keyframes stepper-current-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(27, 58, 107, 0.12); }
-  50% { box-shadow: 0 0 0 6px rgba(27, 58, 107, 0.08); }
+  0%, 100% { box-shadow: 0 0 0 4px rgba(59, 111, 232, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(59, 111, 232, 0.14); }
 }
 .stepper__dot--current {
   animation: stepper-current-pulse 2s ease-in-out infinite;
@@ -214,7 +214,7 @@
 }
 @keyframes timeline-dot-glow {
   0%, 100% { border-color: var(--color-brand-subtle); }
-  50% { border-color: rgba(27, 58, 107, 0.25); }
+  50% { border-color: rgba(59, 111, 232, 0.45); }
 }
 .timeline__item:first-child .timeline__dot {
   animation: timeline-dot-glow 2s ease-in-out infinite;

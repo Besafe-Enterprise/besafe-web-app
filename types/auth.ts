@@ -1,9 +1,8 @@
 export type AgencyRole =
   | "AGENCY_ADMIN"
-  | "DISPATCHER"
   | "FIELD_AGENT";
 
-export type StaffRole = "AGENCY_ADMIN" | "DISPATCHER";
+export type StaffRole = "AGENCY_ADMIN" | "FIELD_AGENT";
 
 export interface AgencyLocation {
   lat: number;

@@ -1,6 +1,6 @@
 /* ================================================
    BESAFE ENTERPRISE — OPERATIONS CONSOLE LAYOUT
-   Dark sidebar + light content command center
+   Dark sidebar + dark content command center
    ================================================ */
 
 .operations-layout {
@@ -9,7 +9,7 @@
   grid-template-rows: var(--topbar-height) 1fr;
   height: 100vh;
   overflow: hidden;
-  background: #F7F8FA;
+  background: var(--color-bg);
 }
 
 .operations-sidebar {
@@ -36,7 +36,7 @@
   grid-column: 2;
   overflow-y: auto;
   padding: 28px 32px;
-  background: #F7F8FA;
+  background: var(--color-bg);
 }
 
 /* Mobile overlay */

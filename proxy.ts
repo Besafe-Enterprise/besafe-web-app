@@ -10,6 +10,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url))
   }
 
+  // 1a. Root of the operations console → Command Center
+  if (pathname === "/operations") {
+    return NextResponse.redirect(new URL("/operations/command-center", request.url))
+  }
+
   // 2. If authenticated agency user tries to access /login or /register, redirect to /operations
   if (pathname === "/login" || pathname === "/register") {
     if (agencyToken) {

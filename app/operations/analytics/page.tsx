@@ -18,6 +18,7 @@ export default function AnalyticsPage() {
   const maxVolume = Math.max(1, ...volume.map((v) => v.count || 0));
   const maxCat = Math.max(1, ...category.map((c) => c.count || 0));
 
+
   return (
     <div>
       <div className="page-header">
@@ -45,10 +46,11 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+
       {isLoading ? (
         <SkeletonKpi count={3} />
       ) : (
-        <div className="kpi-grid">
+        <div className="kpi-grid" style={{ marginBottom: "var(--space-6)",display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--space-4)" }}>
           <KpiCard label="Total Cases" value={stats?.total_all_time ?? stats?.total ?? 0} sub="All time" />
           <KpiCard label="Active Now" value={stats?.active_alerts ?? stats?.active ?? 0} sub="Current open cases" />
           <KpiCard label="Resolved" value={stats?.resolved_today ?? stats?.resolved ?? 0} sub="Resolved" />

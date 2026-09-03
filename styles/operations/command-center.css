@@ -122,7 +122,7 @@
   padding: var(--space-3) var(--space-2);
   border-radius: var(--radius-md);
   transition: background var(--transition-fast);
-  border-bottom: 1px solid #F0F1F3;
+  border-bottom: 1px solid var(--color-border);
 }
 .cc-team__item:last-child {
   border-bottom: none;

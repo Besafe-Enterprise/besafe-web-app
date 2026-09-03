@@ -1,92 +1,93 @@
 /* ================================================
    BESAFE ENTERPRISE — CSS DESIGN SYSTEM
    globals.css
+   The app is now dark-only. Surfaces, tints and
+   accents are tuned for a vibrant dark palette.
    ================================================ */
 
 :root {
   /* ---- BRAND ---- */
-  --color-brand:            #1B3A6B;
-  --color-brand-hover:      #153060;
-  --color-brand-subtle:     #EDF2FA;
-  --color-brand-border:     #C2D0E8;
+  --color-brand:            #3B6FE8;
+  --color-brand-hover:      #5A86F2;
+  --color-brand-subtle:     rgba(99, 138, 244, 0.16);
+  --color-brand-border:     rgba(122, 156, 249, 0.4);
 
   /* ---- SURFACES ---- */
-  --color-bg:               #F4F5F7;
-  --color-surface:          #FFFFFF;
-  --color-surface-raised:   #FFFFFF;
-  --color-surface-sunken:   #F0F1F3;
-  --color-surface-overlay:  rgba(0, 0, 0, 0.5);
+  --color-bg:               #0A0E18;
+  --color-surface:          #131927;
+  --color-surface-raised:   #1A2234;
+  --color-surface-sunken:   #0D1220;
+  --color-surface-overlay:  rgba(2, 4, 10, 0.7);
 
   /* ---- BORDERS ---- */
-  --color-border:           #E2E5EA;
-  --color-border-strong:    #C8CDD6;
-  --color-border-focus:     #1B3A6B;
+  --color-border:           #26314A;
+  --color-border-strong:    #39466B;
+  --color-border-focus:     #3B6FE8;
 
   /* ---- TEXT ---- */
-  --color-text-primary:     #111827;
-  --color-text-secondary:   #4B5563;
-  --color-text-tertiary:    #9CA3AF;
-  --color-text-disabled:    #D1D5DB;
+  --color-text-primary:     #F3F6FF;
+  --color-text-secondary:   #ADB7CC;
+  --color-text-tertiary:    #6F7B96;
+  --color-text-disabled:    #3E485F;
   --color-text-inverse:     #FFFFFF;
-  --color-text-brand:       #1B3A6B;
-  --color-text-link:        #1B3A6B;
+  --color-text-brand:       #8FB0FF;
+  --color-text-link:        #7DA0FF;
 
   /* ---- PRIORITY ---- */
-  --color-critical:         #DC2626;
-  --color-critical-bg:      #FEF2F2;
-  --color-critical-border:  #FCA5A5;
-  --color-high:             #D97706;
-  --color-high-bg:          #FFFBEB;
-  --color-high-border:      #FCD34D;
-  --color-medium:           #2563EB;
-  --color-medium-bg:        #EFF6FF;
-  --color-medium-border:    #BFDBFE;
-  --color-low:              #4B5563;
-  --color-low-bg:           #F9FAFB;
-  --color-low-border:       #E5E7EB;
+  --color-critical:         #F87171;
+  --color-critical-bg:      rgba(248, 113, 113, 0.14);
+  --color-critical-border:  rgba(252, 165, 165, 0.4);
+  --color-high:             #FBBF24;
+  --color-high-bg:          rgba(251, 191, 36, 0.14);
+  --color-high-border:      rgba(252, 211, 77, 0.4);
+  --color-medium:           #60A5FA;
+  --color-medium-bg:        rgba(96, 165, 250, 0.14);
+  --color-medium-border:    rgba(147, 197, 253, 0.4);
+  --color-low:              #94A3B8;
+  --color-low-bg:           rgba(148, 163, 184, 0.12);
+  --color-low-border:       rgba(148, 163, 184, 0.32);
 
   /* ---- STATUS — OPERATIONAL ---- */
-  --color-available:        #059669;
-  --color-available-bg:     #ECFDF5;
-  --color-busy:             #D97706;
-  --color-busy-bg:          #FFFBEB;
-  --color-en-route:         #2563EB;
-  --color-en-route-bg:      #EFF6FF;
-  --color-on-site:          #7C3AED;
-  --color-on-site-bg:       #F5F3FF;
-  --color-offline:          #9CA3AF;
-  --color-offline-bg:       #F9FAFB;
+  --color-available:        #34D399;
+  --color-available-bg:     rgba(52, 211, 153, 0.14);
+  --color-busy:             #FBBF24;
+  --color-busy-bg:          rgba(251, 191, 36, 0.14);
+  --color-en-route:         #60A5FA;
+  --color-en-route-bg:      rgba(96, 165, 250, 0.14);
+  --color-on-site:          #A78BFA;
+  --color-on-site-bg:       rgba(167, 139, 250, 0.14);
+  --color-offline:          #64748B;
+  --color-offline-bg:       rgba(100, 116, 139, 0.12);
 
-  
   /* ---- STATUS — CASE LIFECYCLE ---- */
-  --color-case-new:                #6B7280;
-  --color-case-triaged:            #D97706;
-  --color-case-assigned:           #2563EB;
-  --color-case-accepted:           #2563EB;
-  --color-case-en-route:           #7C3AED;
-  --color-case-on-site:            #7C3AED;
-  --color-case-investigating:      #1D4ED8;
-  --color-case-pending-review:     #D97706;
-  --color-case-changes-requested:  #DC2626;
-  --color-case-resolved:           #059669;
-  --color-case-closed:             #4B5563;
+  --color-case-new:                #9CA3AF;
+  --color-case-triaged:            #FBBF24;
+  --color-case-assigned:           #60A5FA;
+  --color-case-accepted:           #60A5FA;
+  --color-case-en-route:           #A78BFA;
+  --color-case-on-site:            #A78BFA;
+  --color-case-investigating:      #818CF8;
+  --color-case-pending-review:     #FBBF24;
+  --color-case-changes-requested:  #F87171;
+  --color-case-resolved:           #34D399;
+  --color-case-closed:             #94A3B8;
 
   /* ---- STATUS — REPORTS ---- */
-  --color-report-draft:            #6B7280;
-  --color-report-submitted:        #2563EB;
-  --color-report-under-review:     #D97706;
-  --color-report-changes:          #DC2626;
-  --color-report-approved:         #059669;
+  --color-report-draft:            #9CA3AF;
+  --color-report-submitted:        #60A5FA;
+  --color-report-under-review:     #FBBF24;
+  --color-report-changes:          #F87171;
+  --color-report-approved:         #34D399;
 
   /* ---- SUCCESS / WARNING / ERROR / INFO ---- */
-  --color-success:          #059669;
-  --color-success-bg:       #ECFDF5;
-  --color-warning:          #D97706;
-  --color-warning-bg:       #FFFBEB;
-  --color-error:            #DC2626;
-  --color-error-bg:         #FEF2F2;
-  --color-info:             #2563EB;
-  --color-info-bg:          #EFF6FF;
+  --color-success:          #34D399;
+  --color-success-bg:       rgba(52, 211, 153, 0.14);
+  --color-warning:          #FBBF24;
+  --color-warning-bg:       rgba(251, 191, 36, 0.14);
+  --color-error:            #F87171;
+  --color-error-bg:         rgba(248, 113, 113, 0.14);
+  --color-info:             #60A5FA;
+  --color-info-bg:          rgba(96, 165, 250, 0.14);
 
   /* ---- TYPOGRAPHY ---- */
   --font-sans:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -138,10 +139,10 @@
   --radius-full: 9999px;
 
   /* ---- SHADOWS ---- */
-  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md:  0 2px 6px rgba(0, 0, 0, 0.08);
-  --shadow-lg:  0 4px 16px rgba(0, 0, 0, 0.10);
-  --shadow-xl:  0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-sm:  0 1px 2px rgba(2, 6, 16, 0.5);
+  --shadow-md:  0 2px 8px rgba(2, 6, 16, 0.55);
+  --shadow-lg:  0 8px 24px rgba(2, 6, 16, 0.6);
+  --shadow-xl:  0 16px 40px rgba(2, 6, 16, 0.65);
 
   /* ---- TRANSITIONS ---- */
   --transition-fast:   120ms ease;
@@ -156,22 +157,8 @@
   --z-overlay: 300;
   --z-modal:   400;
   --z-toast:   500;
-}
 
-/* ---- DARK MODE ---- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg:             #0F1117;
-    --color-surface:        #1A1D27;
-    --color-surface-raised: #21242F;
-    --color-surface-sunken: #0D1018;
-    --color-border:         #2A2D3A;
-    --color-border-strong:  #383B4A;
-    --color-text-primary:   #F1F3F7;
-    --color-text-secondary: #A0A8B8;
-    --color-text-tertiary:  #5A6070;
-    --color-text-disabled:  #3A3F50;
-  }
+  color-scheme: dark;
 }
 
 /* ---- RESETS ---- */

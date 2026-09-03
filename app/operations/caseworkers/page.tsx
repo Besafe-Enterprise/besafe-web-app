@@ -109,7 +109,7 @@ export default function CaseworkersPage() {
                     </div>
                     <div className="worker-card__stat">
                       <span className="worker-card__stat-value">
-                        {t.created_at ? new Date(t.created_at).toLocaleDateString("en-US", { month: "short" }) : "—"}
+                        {t.created_at ? new Date(t.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—"}
                       </span>
                       <span className="worker-card__stat-label">Joined</span>
                     </div>

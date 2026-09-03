@@ -105,6 +105,73 @@ export const teamApi = {
     const res = await apiClient.patch<{ success: boolean; is_active: boolean }>(`/agency/team/${staffId}/status`, { is_active: isActive })
     return res.data
   },
+  remove: async (staffId: string) => {
+    const res = await apiClient.delete<{ success: boolean; message: string }>(`/agency/team/${staffId}`)
+    return res.data
+  },
+}
+
+export interface AgencyOption {
+  id: string;
+  name: string;
+  region?: string;
+  phone_number?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface StaffApplication {
+  id: string;
+  agency_id: string;
+  name: string;
+  email: string;
+  phone_number?: string;
+  role?: string;
+  note?: string;
+  status: "pending" | "approved" | "rejected";
+  created_at?: string;
+}
+
+export const fieldWorkerApi = {
+  /** Public: list agencies a field worker can apply to. */
+  getAgencyOptions: async () => {
+    const res = await apiClient.get<AgencyOption[]>("/agency/options")
+    return res.data
+  },
+  /** Public: submit a field-worker application for agency approval. */
+  register: async (data: {
+    name: string;
+    email: string;
+    phone_number: string;
+    password: string;
+    agency_id: string;
+    note?: string;
+  }) => {
+    const res = await apiClient.post<{ success: boolean; message: string }>("/agency/staff/register", data)
+    return res.data
+  },
+}
+
+export const teamRequestsApi = {
+  /** Agency-authenticated: list pending field-worker applications. */
+  list: async (status?: string) => {
+    const res = await apiClient.get<StaffApplication[]>("/agency/team/requests", {
+      params: status ? { status } : undefined,
+    })
+    return res.data
+  },
+  approve: async (requestId: string) => {
+    const res = await apiClient.post<{ success: boolean; message: string; member: StaffMember }>(
+      `/agency/team/requests/${requestId}/approve`
+    )
+    return res.data
+  },
+  reject: async (requestId: string) => {
+    const res = await apiClient.post<{ success: boolean; message: string }>(
+      `/agency/team/requests/${requestId}/reject`
+    )
+    return res.data
+  },
 }
 
 export const adminApi = {

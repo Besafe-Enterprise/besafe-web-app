@@ -21,7 +21,7 @@
   inset: 0;
   background: radial-gradient(
     ellipse at 50% 0%,
-    rgba(27, 58, 107, 0.08) 0%,
+    rgba(59, 111, 232, 0.1) 0%,
     var(--color-bg) 70%
   );
   pointer-events: none;
@@ -56,7 +56,7 @@
   background: linear-gradient(135deg, var(--color-brand), #2a5298);
   color: var(--color-text-inverse);
   margin-bottom: var(--space-4);
-  box-shadow: 0 4px 24px rgba(27, 58, 107, 0.25);
+  box-shadow: 0 4px 24px rgba(59, 111, 232, 0.35);
 }
 
 .login-brand-badge {
@@ -216,7 +216,7 @@
 
 .login-field input:focus {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px rgba(27, 58, 107, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 111, 232, 0.2);
 }
 
 .login-field input.error {

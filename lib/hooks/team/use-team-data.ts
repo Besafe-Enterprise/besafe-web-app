@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { teamApi, adminApi } from "@/lib/api";
+import { teamApi, adminApi, teamRequestsApi } from "@/lib/api";
 import type { StaffMember, StaffCreateInput, StaffRole } from "@/types/auth";
 import type { Agency } from "@/types";
 import { toast } from "sonner";
@@ -87,6 +87,24 @@ export function useUpdateStaffStatus() {
   });
 }
 
+// 4b. Remove Team Member (delete account)
+export function useRemoveTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (staffId: string) => {
+      return await teamApi.remove(staffId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
+      toast.success("Team member removed.");
+    },
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to remove team member"));
+    },
+  });
+}
+
 // 5. Super Admin: Fetch All Agencies
 export function useGetAllAgencies() {
   return useQuery<Agency[]>({
@@ -112,6 +130,50 @@ export function useVerifyAgency() {
     },
     onError: (err: unknown) => {
       toast.error(getErrorMessage(err, "Failed to update station status"));
+    },
+  });
+}
+
+// 7. Field-worker applications awaiting agency approval
+export function useGetStaffApplications(status?: string) {
+  return useQuery({
+    queryKey: ["agency", "team", "requests", status || "pending"],
+    queryFn: async () => {
+      return await teamRequestsApi.list(status || "pending");
+    },
+    staleTime: 15 * 1000,
+  });
+}
+
+export function useApproveStaffApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      return await teamRequestsApi.approve(requestId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "team", "requests"] });
+      toast.success("Application approved. The field worker can now sign in.");
+    },
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to approve application"));
+    },
+  });
+}
+
+export function useRejectStaffApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      return await teamRequestsApi.reject(requestId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency", "team", "requests"] });
+      toast.success("Application rejected.");
+    },
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to reject application"));
     },
   });
 }

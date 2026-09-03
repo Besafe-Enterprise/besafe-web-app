@@ -68,7 +68,7 @@
 .operations-search__input:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgba(27, 58, 107, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 111, 232, 0.2);
   width: 300px;
   background: var(--color-surface);
 }

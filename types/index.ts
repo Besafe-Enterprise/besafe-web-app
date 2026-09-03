@@ -110,6 +110,51 @@ export interface Alert {
   updated_at?: string;
   resolved_at?: string;
   notes?: string;
+  field_evidence?: FieldEvidenceItem[];
+  field_reports?: FieldReport[];
+}
+
+export interface FieldEvidenceItem {
+  id: string;
+  type: string;
+  url: string;
+  name?: string;
+  mime?: string;
+  uploaded_by?: string;
+  uploaded_at?: string;
+}
+
+export interface FieldReport {
+  id: string;
+  title: string;
+  body: string;
+  progress?: string | null;
+  created_by?: string;
+  created_by_name?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FieldNotification {
+  id: string;
+  staff_id?: string;
+  agency_id?: string;
+  title: string;
+  body: string;
+  type: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  created_at?: string;
+}
+
+export interface FieldCheckIn {
+  id: string;
+  alert_id?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  status?: string | null;
+  note?: string;
+  recorded_at?: string;
 }
 
 export interface EvidenceAttachment {

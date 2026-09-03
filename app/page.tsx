@@ -17,8 +17,6 @@ import {
   ChevronDown,
   HardHat,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import "@/styles/landing.css";
 
 export default function LandingPage() {
@@ -92,11 +90,11 @@ export default function LandingPage() {
             <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <Link href="/login?role=admin">
-              <Button variant="ghost" size="sm">Sign In</Button>
+            <Link href="/login?role=admin" className="landing-btn landing-btn--ghost landing-btn--sm">
+              Sign In
             </Link>
-            <a href="#download">
-              <Button size="sm">Get App</Button>
+            <a href="#download" className="landing-btn landing-btn--primary landing-btn--sm">
+              Get App
             </a>
           </div>
         </div>
@@ -105,36 +103,30 @@ export default function LandingPage() {
       {/* ─── Hero ─────────────────────────────────────── */}
       <section className="landing-hero">
         <div className="landing-hero-inner">
-          <div className="landing-hero-badge">
+          {/* <div className="landing-hero-badge">
             <span className="landing-hero-badge-dot" />
             Real-time Safety and Response
-          </div>
+          </div> */}
 
-          <h1>Stay Safe. Get Help Instantly.</h1>
+          <h1 >Stay Safe. Get Help Instantly.</h1>
 
           <p>
             BeSafe connects you to the nearest emergency agency with one tap, voice-triggered alerts, safety check-ins, and secure reporting — all from your phone.
           </p>
 
           <div className="landing-hero-actions">
-            <a href="#download">
-              <Button size="lg">
-                <Smartphone size={18} />
-                Download the App
-                <ArrowRight size={16} />
-              </Button>
+            <a href="#download" className="landing-btn landing-btn--primary landing-btn--lg">
+              <Smartphone size={18} />
+              Download the App
+              <ArrowRight size={16} />
             </a>
-            <Link href="/login?role=admin">
-              <Button variant="outline" size="lg">
-                <Building2 size={18} />
-                Agency Console
-              </Button>
+            <Link href="/login?role=admin" className="landing-btn landing-btn--outline landing-btn--lg">
+              <Building2 size={18} />
+              Agency Console
             </Link>
-            <Link href="/login?role=field">
-              <Button variant="outline" size="lg">
-                <HardHat size={18} />
-                Field Worker
-              </Button>
+            <Link href="/login?role=field" className="landing-btn landing-btn--outline landing-btn--lg">
+              <HardHat size={18} />
+              Field Worker
             </Link>
           </div>
         </div>
@@ -265,7 +257,7 @@ export default function LandingPage() {
               </div>
 
               <div className="perspective-card">
-                <div className="perspective-card-icon feature-card-icon--checkin">
+                <div className="perspective-card-icon feature-card-icon--purple">
                   <ShieldCheck size={20} />
                 </div>
                 <h4>Case Management</h4>
@@ -275,7 +267,7 @@ export default function LandingPage() {
               </div>
 
               <div className="perspective-card">
-                <div className="perspective-card-icon feature-card-icon--voice">
+                <div className="perspective-card-icon feature-card-icon--teal">
                   <Building2 size={20} />
                 </div>
                 <h4>Team Dispatch</h4>
@@ -309,7 +301,7 @@ export default function LandingPage() {
                     <p className="download-card-name">Google Play</p>
                   </div>
                 </div>
-                <Badge variant="secondary">Android</Badge>
+                <span className="landing-badge">Android</span>
               </div>
               <p>For all Android devices. Install and start using in minutes.</p>
             </a>
@@ -323,7 +315,7 @@ export default function LandingPage() {
                     <p className="download-card-name">App Store</p>
                   </div>
                 </div>
-                <Badge variant="secondary">iOS</Badge>
+                <span className="landing-badge">iOS</span>
               </div>
               <p>Native iPhone and iPad app with full feature support.</p>
             </a>
