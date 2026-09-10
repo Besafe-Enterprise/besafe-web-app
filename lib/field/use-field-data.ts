@@ -132,12 +132,15 @@ export function useUploadFieldAvatar() {
 
 /** Notifications list. */
 export function useFieldNotifications() {
+  const { token, user } = useAgencyAuthStore.getState();
+  const isField = user?.role === "FIELD_AGENT";
   return useQuery({
     queryKey: ["field", "notifications"],
     queryFn: async () => {
       return await fieldWorkerApi.getNotifications();
     },
     refetchInterval: 30 * 1000,
+    enabled: !!token && isField,
   });
 }
 
