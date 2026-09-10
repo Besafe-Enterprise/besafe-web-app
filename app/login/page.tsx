@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -56,10 +56,16 @@ function AgencyLoginForm() {
   const searchParams = useSearchParams();
 
   const roleParam = searchParams.get("role");
-  const isFieldOnly = roleParam === "field";
+  const isPWA = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as { standalone?: boolean }).standalone === true);
+  const isFieldOnly = roleParam === "field" || isPWA;
   const [loginRole, setLoginRole] = useState<"admin" | "field">(
     isFieldOnly ? "field" : "admin"
   );
+
+  // Field PWA must only use ?role=field — any other login route is bounced
+  useEffect(() => {
+    if (isPWA && roleParam !== "field") router.replace("/login?role=field");
+  }, [isPWA, roleParam, router]);
 
   const { mutate: login, isPending } = useAgencyLogin();
   const { mutate: changeInitialPassword, isPending: isChangingPassword } =
@@ -331,6 +337,7 @@ function AgencyLoginForm() {
               )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="login-form">
+                <input type="hidden" {...register("role")} />
                 <div className="login-field">
                   <Label htmlFor="email">Email</Label>
                   <div className="input-wrapper">

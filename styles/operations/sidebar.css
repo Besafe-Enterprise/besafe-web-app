@@ -155,14 +155,14 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: #1E3A5F;
-  color: #60A5FA;
+  background: #1572eb;
+  color: #f5f6f8;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
-  border: 2px solid rgba(96, 165, 250, 0.2);
+  border: 2px solid rgba(239, 240, 241, 0.2);
 }
 .ops-sidebar-user-info {
   min-width: 0;

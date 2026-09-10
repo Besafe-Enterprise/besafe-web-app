@@ -10,6 +10,7 @@ const PRIORITY_MAP: Record<string, string> = {
 
 const STATUS_MAP: Record<string, string> = {
   new: "badge--case-new",
+  pending_acceptance: "badge--case-triaged",
   triaged: "badge--case-triaged",
   assigned: "badge--case-assigned",
   accepted: "badge--case-accepted",
@@ -23,8 +24,7 @@ const STATUS_MAP: Record<string, string> = {
   resolved: "badge--case-resolved",
   closed: "badge--case-closed",
   // legacy alert statuses
-  active: "badge--critical",
-  dispatched: "badge--case-en-route",
+  active: "badge--case-new",
   acknowledged: "badge--case-accepted",
   false_alarm: "badge--secondary",
 };
@@ -32,6 +32,7 @@ const STATUS_MAP: Record<string, string> = {
 const REPORT_STATUS_MAP: Record<string, string> = {
   draft: "badge--report-draft",
   pending: "badge--report-submitted",
+  pending_acceptance: "badge--report-submitted",
   submitted: "badge--report-submitted",
   pending_analysis: "badge--report-submitted",
   "under review": "badge--report-under-review",

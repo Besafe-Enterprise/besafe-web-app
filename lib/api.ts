@@ -24,9 +24,16 @@ export const authApi = {
   },
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const alertsApi = {
-  getAlerts: async (params?: { status?: AlertStatus; priority?: string; limit?: number }) => {
-    const res = await apiClient.get<Alert[]>("/alerts", { params })
+  getAlerts: async (params?: { status?: string; priority?: string; page?: number; limit?: number; include_resolved?: boolean }) => {
+    const res = await apiClient.get<PaginatedResponse<Alert>>("/alerts", { params })
     return res.data
   },
   getAlertById: async (id: string | number) => {
@@ -55,8 +62,8 @@ export const alertsApi = {
 }
 
 export const reportsApi = {
-  getReports: async (params?: { status?: string; category?: string; limit?: number }) => {
-    const res = await apiClient.get<Report[]>("/agency/reports", { params })
+  getReports: async (params?: { status?: string; category?: string; page?: number; limit?: number; include_resolved?: boolean }) => {
+    const res = await apiClient.get<PaginatedResponse<Report>>("/agency/reports", { params })
     return res.data
   },
   getReportById: async (id: string | number) => {
@@ -107,6 +114,40 @@ export const teamApi = {
   },
   remove: async (staffId: string) => {
     const res = await apiClient.delete<{ success: boolean; message: string }>(`/agency/team/${staffId}`)
+    return res.data
+  },
+  getMemberDetail: async (staffId: string) => {
+    const res = await apiClient.get(`/agency/team/${staffId}/detail`)
+    return res.data
+  },
+  reviewReport: async (alertId: string, reportId: string, decision: "approved" | "changes_requested", feedback?: string) => {
+    const res = await apiClient.patch(`/agency/cases/${alertId}/reports/${reportId}/review`, { decision, feedback })
+    return res.data
+  },
+  reviewReportNote: async (reportId: string, noteId: string, decision: "approved" | "changes_requested", feedback?: string) => {
+    const res = await apiClient.patch(`/agency/reports/${reportId}/notes/${noteId}/review`, { decision, feedback })
+    return res.data
+  },
+}
+
+export interface AgencyNotification {
+  id: string;
+  agency_id?: string;
+  title: string;
+  body: string;
+  type: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  created_at?: string;
+}
+
+export const agencyNotificationsApi = {
+  list: async () => {
+    const res = await apiClient.get<{ notifications: AgencyNotification[]; unread: number }>("/agency/notifications")
+    return res.data
+  },
+  markRead: async (ids?: string[]) => {
+    const res = await apiClient.post("/agency/notifications/read", { notification_ids: ids })
     return res.data
   },
 }
@@ -169,9 +210,7 @@ export const fieldWorkerApi = {
   uploadAvatar: async (file: File) => {
     const form = new FormData()
     form.append("avatar", file)
-    const res = await apiClient.patch<{ success: boolean; profile: StaffMember }>("/field/profile", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
+    const res = await apiClient.patch<{ success: boolean; profile: StaffMember }>("/field/profile", form)
     return res.data
   },
 
@@ -205,7 +244,7 @@ export const fieldWorkerApi = {
     return res.data
   },
 
-  /** Upload case evidence (multipart). */
+  /** Upload case evidence (multipart) — 2min timeout for large video. */
   uploadEvidence: async (alertId: string, file: File, fileType: string) => {
     const form = new FormData()
     form.append("file", file)
@@ -213,7 +252,7 @@ export const fieldWorkerApi = {
     const res = await apiClient.post<{ success: boolean; evidence: FieldEvidenceItem }>(
       `/field/cases/${alertId}/evidence`,
       form,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { timeout: 120000 }
     )
     return res.data
   },
@@ -227,11 +266,111 @@ export const fieldWorkerApi = {
     return res.data
   },
 
+  /** Submit a report to the agency for check. */
+  submitReport: async (alertId: string, reportId: string) => {
+    const res = await apiClient.post<{ success: boolean; review_status: string }>(
+      `/field/cases/${alertId}/reports/${reportId}/submit`
+    )
+    return res.data
+  },
+
   /** Update case report / note. */
   updateReport: async (alertId: string, reportId: string, data: { title?: string; body?: string; progress?: string }) => {
     const res = await apiClient.patch<{ success: boolean; updated: Partial<FieldReport> }>(
       `/field/cases/${alertId}/reports/${reportId}`,
       data
+    )
+    return res.data
+  },
+
+  /** Assigned SafeChat reports (reported cases) for this worker. */
+  getReports: async () => {
+    const res = await apiClient.get<Report[]>("/field/reports")
+    return res.data
+  },
+  getReport: async (reportId: string) => {
+    const res = await apiClient.get<Report>(`/field/reports/${reportId}`)
+    return res.data
+  },
+  uploadReportEvidence: async (reportId: string, file: File, fileType: string) => {
+    const form = new FormData()
+    form.append("file", file)
+    form.append("type", fileType)
+    const res = await apiClient.post(`/field/reports/${reportId}/evidence`, form, { timeout: 120000 })
+    return res.data
+  },
+  updateReportStatus: async (reportId: string, status: string) => {
+    const res = await apiClient.patch(`/field/reports/${reportId}/status`, { status })
+    return res.data
+  },
+  /** Add a progress note to a SafeChat report. */
+  addReportNote: async (reportId: string, data: { title?: string; body: string; progress?: string }) => {
+    const res = await apiClient.post<{ success: boolean; note: FieldReport }>(
+      `/field/reports/${reportId}/notes`,
+      data
+    )
+    return res.data
+  },
+  /** Submit a report note to the agency for review. */
+  submitReportNote: async (reportId: string, noteId: string) => {
+    const res = await apiClient.post<{ success: boolean }>(
+      `/field/reports/${reportId}/notes/${noteId}/submit`
+    )
+    return res.data
+  },
+  /** Accept a report assignment. */
+  acceptReport: async (reportId: string) => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(
+      `/field/reports/${reportId}/accept`
+    )
+    return res.data
+  },
+  /** Decline a report assignment (unassigns self). */
+  declineReport: async (reportId: string) => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(
+      `/field/reports/${reportId}/decline`
+    )
+    return res.data
+  },
+  /** Accept a case assignment — gains full access. */
+  acceptCase: async (caseId: string) => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(
+      `/field/cases/${caseId}/accept`
+    )
+    return res.data
+  },
+  /** Decline a case assignment — clears assignment. */
+  declineCase: async (caseId: string) => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(
+      `/field/cases/${caseId}/decline`
+    )
+    return res.data
+  },
+  /** Go on-case — marks this case as the worker's single active case. */
+  goOnCase: async (caseId: string) => {
+    const res = await apiClient.post<{ success: boolean; active_case_id: string | null }>(
+      `/field/cases/${caseId}/on-case`
+    )
+    return res.data
+  },
+  /** Go off-case — clears this case as the worker's active case. */
+  goOffCase: async (caseId: string) => {
+    const res = await apiClient.post<{ success: boolean; active_case_id: null }>(
+      `/field/cases/${caseId}/off-case`
+    )
+    return res.data
+  },
+  /** Go on-case for a report — marks this report as the worker's single active case. */
+  goOnReportCase: async (reportId: string) => {
+    const res = await apiClient.post<{ success: boolean; active_case_id: string | null }>(
+      `/field/reports/${reportId}/on-case`
+    )
+    return res.data
+  },
+  /** Go off-case for a report — clears this report as the worker's active case. */
+  goOffReportCase: async (reportId: string) => {
+    const res = await apiClient.post<{ success: boolean; active_case_id: null }>(
+      `/field/reports/${reportId}/off-case`
     )
     return res.data
   },
@@ -283,5 +422,31 @@ export const agencySettingsApi = {
     const res = await apiClient.patch<{ success: boolean; message: string }>("/agency/password", passwords)
     return res.data
   },
+}
+
+export const exportApi = {
+  casePdf: async (alertId: string | number) => {
+    const res = await apiClient.get<Blob>(`/agency/cases/${alertId}/export.pdf`, { responseType: "blob" as unknown as "json", timeout: 60000 })
+    return res.data as unknown as Blob
+  },
+  statisticsPdf: async () => {
+    const res = await apiClient.get<Blob>("/agency/statistics/export.pdf", { responseType: "blob" as unknown as "json", timeout: 60000 })
+    return res.data as unknown as Blob
+  },
+  reportPdf: async (reportId: string | number) => {
+    const res = await apiClient.get<Blob>(`/agency/reports/${reportId}/export.pdf`, { responseType: "blob" as unknown as "json", timeout: 60000 })
+    return res.data as unknown as Blob
+  },
+}
+
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 

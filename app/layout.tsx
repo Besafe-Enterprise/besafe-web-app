@@ -1,6 +1,16 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
+// Hoisted — prevents FOUC on route navigation (field + operations chunks were lazy-loaded per page)
+import "@/styles/field.css"
+import "@/styles/operations/base.css"
+import "@/styles/operations/cases.css"
+import "@/styles/operations/command-center.css"
+import "@/styles/operations/layout.css"
+import "@/styles/operations/misc.css"
+import "@/styles/operations/sidebar.css"
+import "@/styles/operations/topbar.css"
+import "mapbox-gl/dist/mapbox-gl.css"
 import { QueryProvider } from "@/providers/QueryProvider"
 import { Toaster } from "sonner"
 import { PwaInstaller } from "@/components/pwa/pwa-installer"
@@ -70,6 +80,7 @@ export default function RootLayout({
           <Toaster
             position="top-right"
             richColors
+            duration={2000}
             toastOptions={{
               style: {
                 background: "#0F172A",

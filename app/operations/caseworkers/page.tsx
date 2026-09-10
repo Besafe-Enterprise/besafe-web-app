@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useGetAgencyTeam } from "@/lib/hooks/team/use-team-data";
-import { useGetAlerts } from "@/lib/hooks/dispatch/use-dispatch-data";
+import { useGetAlerts, useGetReports } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { Badge } from "@/components/operations/shared/Badge";
 import { Avatar } from "@/components/operations/shared/Avatar";
 import { EmptyState } from "@/components/operations/shared/EmptyState";
@@ -14,18 +14,24 @@ import "@/styles/operations/misc.css";
 
 export default function CaseworkersPage() {
   const { data: team = [], isLoading } = useGetAgencyTeam();
-  const { data: alerts = [] } = useGetAlerts();
+  const { data: alertsResp } = useGetAlerts({ limit: 500, include_resolved: false });
+  const { data: reportsResp } = useGetReports({ limit: 500, include_resolved: false });
   const [tab, setTab] = useState<"all" | "available" | "oncase" | "offline">("all");
 
   const casesByWorker = useMemo(() => {
     const map: Record<string, number> = {};
-    alerts.forEach((a) => {
+    (alertsResp?.items ?? []).forEach((a) => {
       if (a.assigned_staff_id) {
         map[String(a.assigned_staff_id)] = (map[String(a.assigned_staff_id)] || 0) + 1;
       }
     });
+    (reportsResp?.items ?? []).forEach((r) => {
+      if (r.assigned_staff_id) {
+        map[String(r.assigned_staff_id)] = (map[String(r.assigned_staff_id)] || 0) + 1;
+      }
+    });
     return map;
-  }, [alerts]);
+  }, [alertsResp, reportsResp]);
 
   const filtered = team.filter((t) => {
     const status = workerStatus(t);

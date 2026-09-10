@@ -3,25 +3,45 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Clock, Bell, FileText } from "lucide-react";
 import { EmptyState } from "@/components/operations/shared/EmptyState";
 import { Skeleton } from "@/components/operations/shared/LoadingSkeleton";
 import { WorkerCaseCard } from "@/components/field/shared/WorkerCaseCard";
-import { SyncIndicator } from "@/components/field/shared/SyncIndicator";
+import { WorkerReportCard } from "@/components/field/shared/WorkerReportCard";
 import { ErrorRetry } from "@/components/field/shared/ErrorRetry";
-import { useFieldActiveAlerts } from "@/lib/field/use-field-data";
-import { backendStatusLabel, statusBadgeVariant } from "@/lib/field/utils";
-import { Badge } from "@/components/operations/shared/Badge";
+import { useFieldActiveAlerts, useFieldReports, useFieldNotifications, useFieldProfile } from "@/lib/field/use-field-data";
 import { useOnline } from "@/lib/field/use-online";
-import { Briefcase, ChevronRight } from "lucide-react";
+
+type CombinedItem =
+  | { kind: "case"; id: string | number; created_at?: string; data: import("@/types").Alert }
+  | { kind: "report"; id: string | number; created_at?: string; data: import("@/types").Report };
 
 export default function FieldHomePage() {
   const router = useRouter();
   const online = useOnline();
   const { alerts, isLoading, isError, refetch, worker } = useFieldActiveAlerts();
+  const { data: reports = [] } = useFieldReports();
+  const { data: notifs } = useFieldNotifications();
+  const unread = notifs?.unread ?? 0;
 
-  const current = alerts[0];
-  const pendingCount = alerts.length;
+  const activeAlerts = alerts.filter((a) => a.assignment_status === "accepted");
+  const pendingAlerts = alerts.filter((a) => a.assignment_status === "pending");
+
+  const activeReports = (reports as import("@/types").Report[]).filter(
+    (r) => r.status !== "resolved" && r.status !== "closed"
+  );
+
+  const combined: CombinedItem[] = React.useMemo(() => {
+    const items: CombinedItem[] = [
+      ...activeAlerts.map((a) => ({ kind: "case" as const, id: a.id, created_at: a.created_at, data: a })),
+      ...activeReports.map((r) => ({ kind: "report" as const, id: r.id, created_at: r.created_at || r.createdAt, data: r })),
+    ];
+    return items.sort((a, b) => {
+      const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return db - da;
+    });
+  }, [activeAlerts, activeReports]);
 
   if (isLoading) {
     return (
@@ -36,76 +56,71 @@ export default function FieldHomePage() {
   }
 
   if (isError) {
-    return <ErrorRetry onRetry={() => refetch()} message="We couldn't load your current assignment." />;
-  }
-
-  if (alerts.length === 0) {
-    return (
-      <div className="field-home">
-        <div className="field-home__greeting">
-          <h1>You&apos;re all caught up.</h1>
-          <p>{worker?.name?.split(" ")[0] || "Field worker"} — no active assignment right now.</p>
-        </div>
-        <SyncIndicator online={online} />
-        <EmptyState
-          icon={<CheckCircle2 width={40} height={40} />}
-          title="No active assignment"
-          description="When dispatch assigns you a case, it will appear here at the top of your home screen."
-        />
-        <Link href="/field/history" className="field-primary-btn field-primary-btn--block">
-          View your case history
-        </Link>
-      </div>
-    );
+    return <ErrorRetry onRetry={() => refetch()} message="We couldn't load your cases." />;
   }
 
   return (
     <div className="field-home">
       <div className="field-home__greeting">
-        <h1>Hi, {worker?.name?.split(" ")[0] || "officer"}.</h1>
-        <p>Here&apos;s what needs your attention.</p>
+        <h1>Hi, {worker?.name || "officer"}.</h1>
+        <p>{combined.length > 0 ? `${combined.length} active item${combined.length > 1 ? "s" : ""}` : "No active items right now."}</p>
       </div>
 
-      <SyncIndicator online={online} />
+      <span className="field-sync-pill">
+        <span className={`field-sync-pill__dot ${online ? "field-sync-pill__dot--online" : ""}`} />
+        {online ? "Live sync on" : "Offline — will sync when back online"}
+      </span>
 
-      {pendingCount > 1 && (
-        <div className="field-home__pending">
-          <span>Other pending assignments</span>
-          <span className="field-home__pending-count">{pendingCount - 1}</span>
+      <div className="field-bento">
+        <div className="field-bento__card">
+          <div className="field-bento__label"><CheckCircle2 width={12} height={12} /> Cases</div>
+          <div className="field-bento__value">{activeAlerts.length}</div>
+          <div className="field-bento__hint">In progress</div>
         </div>
+        <div className="field-bento__card">
+          <div className="field-bento__label"><FileText width={12} height={12} /> Reports</div>
+          <div className="field-bento__value">{activeReports.length}</div>
+          <div className="field-bento__hint">To review</div>
+        </div>
+        <div className="field-bento__card">
+          <div className="field-bento__label"><Clock width={12} height={12} /> Pending</div>
+          <div className="field-bento__value">{pendingAlerts.length}</div>
+          <div className="field-bento__hint">{pendingAlerts.length ? "Awaiting acceptance" : "All accepted"}</div>
+        </div>
+        <div className="field-bento__card">
+          <div className="field-bento__label"><Bell width={12} height={12} /> Inbox</div>
+          <div className="field-bento__value">{unread}</div>
+          <div className="field-bento__hint">{unread ? "Need attention" : "All clear"}</div>
+        </div>
+      </div>
+
+      {pendingAlerts.length > 0 && (
+        <Link href="/field/assignments" className="field-home__pending" style={{ textDecoration: "none", marginTop: 12 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock width={14} height={14} /> Cases awaiting your acceptance</span>
+          <span className="field-home__pending-count">{pendingAlerts.length}</span>
+        </Link>
       )}
 
       <div className="field-home__section-title">
-        <span>{pendingCount > 1 ? "Priority — take this first" : "Your assignment"}</span>
+        <span>{combined.length > 0 ? "Your work" : "Nothing assigned"}</span>
       </div>
 
-      {current && (
-        <div className="field-home__current">
-          <WorkerCaseCard alert={current} href={`/field/cases/${current.id}`} showAction={false} />
-          <div className="field-home__next-step">
-            <div className="field-home__next-step-label">Next step</div>
-            <div className="field-home__next-step-row">
-              <Badge variant={statusBadgeVariant(current.status)} tone="status">
-                {backendStatusLabel(current.status)}
-              </Badge>
-              <button
-                className="field-primary-btn field-primary-btn--expand"
-                onClick={() => router.push(`/field/cases/${current.id}`)}
-              >
-                Open Case <ChevronRight width={16} height={16} />
-              </button>
-            </div>
-          </div>
+      {combined.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {combined.map((item) =>
+            item.kind === "case" ? (
+              <WorkerCaseCard key={`case-${item.id}`} alert={item.data} href={`/field/cases/${item.id}`} />
+            ) : (
+              <WorkerReportCard key={`report-${item.id}`} report={item.data} href={`/field/reports/${item.id}`} />
+            )
+          )}
         </div>
-      )}
-
-      {pendingCount > 1 && (
-        <div className="field-home__more">
-          <Link href="/field/assignments" className="field-home__more-link">
-            <Briefcase width={16} height={16} />
-            View all {pendingCount} assignments
-          </Link>
-        </div>
+      ) : (
+        <EmptyState
+          icon={<CheckCircle2 width={40} height={40} />}
+          title="No active assignments"
+          description="When dispatch assigns you a case or report, it will appear here."
+        />
       )}
     </div>
   );

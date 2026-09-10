@@ -11,6 +11,7 @@ import "@/styles/operations/base.css";
 import "@/styles/operations/layout.css";
 import "@/styles/operations/sidebar.css";
 import "@/styles/operations/topbar.css";
+import "@/styles/operations/misc.css";
 
 const BLOCKED_ROLES = ["FIELD_AGENT"];
 

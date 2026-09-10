@@ -3,24 +3,134 @@
    Polished case management UI
    ================================================ */
 
-/* Filter bar */
-.filter-bar {
+/* Compact cases lookup — lives in page-header__actions */
+.cases-lookup {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-  flex-wrap: wrap;
+  gap: 0;
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  height: 36px;
+  padding: 0 var(--space-2);
 }
-.filter-bar__search {
-  flex: 1;
-  min-width: 220px;
+.cases-lookup__icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-right: 6px;
 }
-.filter-bar__select {
-  min-width: 140px;
+.cases-lookup__input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  width: 200px;
+  padding: 0;
+  height: 100%;
+}
+.cases-lookup__input::placeholder {
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+.cases-lookup__input:focus {
+  width: 260px;
+  transition: width 0.2s ease;
+}
+.cases-lookup__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+  user-select: none;
+  white-space: nowrap;
+}
+.cases-lookup__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+/* ── Custom dropdown ───────────────────────────────────── */
+.cases-dd {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.cases-dd__trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0 6px 0 4px;
+  height: 100%;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease, background 0.15s ease;
+  border-radius: var(--radius-sm);
+}
+.cases-dd__trigger:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover, rgba(255,255,255,0.04));
+}
+.cases-dd__value {
+  white-space: nowrap;
+}
+.cases-dd__chevron {
+  color: var(--color-text-tertiary);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.cases-dd__chevron.open {
+  transform: rotate(180deg);
+}
+.cases-dd__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 150px;
+  background: var(--color-surface-elevated, #1e1e2e);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  padding: 4px;
+  z-index: 100;
+  animation: ddSlideIn 0.12s ease-out;
+}
+@keyframes ddSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cases-dd__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.cases-dd__item:hover {
+  background: var(--color-surface-hover, rgba(255,255,255,0.06));
+  color: var(--color-text);
+}
+.cases-dd__item.active {
+  background: var(--color-primary-subtle, rgba(99,102,241,0.15));
+  color: var(--color-primary, #818cf8);
 }
 
 /* Cases grid */
@@ -211,6 +321,14 @@
   background: var(--color-brand);
   border: 3px solid var(--color-brand-subtle);
   flex-shrink: 0;
+}
+.timeline__dot--warning {
+  background: var(--color-warning, #F59E0B);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.timeline__dot--info {
+  background: #3B82F6;
+  border-color: rgba(59, 130, 246, 0.2);
 }
 @keyframes timeline-dot-glow {
   0%, 100% { border-color: var(--color-brand-subtle); }

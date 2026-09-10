@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
 import { useAgencyLogout } from "@/lib/hooks/auth/use-agency-auth";
 import { useAlertStore } from "@/stores/useAlertStore";
+import { ACTIVE_CASE_STATUSES } from "@/types";
 import { initialsOf } from "@/components/operations/shared/Avatar";
 import {
   LayoutDashboard,
   FolderOpen,
   Users,
-  Clipboard,
   MapPin,
   FileText,
   BarChart3,
@@ -26,9 +26,8 @@ const NAV_ITEMS = [
   { label: "Command Center", href: "/operations/command-center", icon: LayoutDashboard },
   { label: "Cases", href: "/operations/cases", icon: FolderOpen },
   { label: "Caseworkers", href: "/operations/caseworkers", icon: Users },
-  { label: "Assignments", href: "/operations/assignments", icon: Clipboard },
   { label: "Live Map", href: "/operations/live-map", icon: MapPin },
-  { label: "Reports", href: "/operations/reports", icon: FileText },
+  { label: "Safety Chat Reports", href: "/operations/reports", icon: FileText },
   { label: "Analytics", href: "/operations/analytics", icon: BarChart3 },
   { label: "Team", href: "/operations/team", icon: Users2 },
   { label: "Settings", href: "/operations/settings", icon: Settings },
@@ -41,7 +40,7 @@ export function OperationsSidebar({ onClose }: { onClose?: () => void }) {
   const { alerts } = useAlertStore();
 
   const activeAlerts =
-    alerts.filter((a) => a.status === "active" || a.priority === "high" || a.priority === "critical")
+    alerts.filter((a) => (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status))
       .length;
 
   return (
@@ -80,11 +79,7 @@ export function OperationsSidebar({ onClose }: { onClose?: () => void }) {
       </nav>
 
       <div className="ops-sidebar-footer">
-        <div className="ops-sidebar-status">
-          <span className="ops-sidebar-status__dot" />
-          <span>Command link active</span>
-        </div>
-        <div className="ops-sidebar-user">
+        <div className="ops-sidebar-user" style={{marginTop:"5px"}}>
           <span className="ops-sidebar-avatar">{initialsOf(user?.name || agency?.name)}</span>
           <div className="ops-sidebar-user-info">
             <div className="ops-sidebar-user-name">{user?.name || agency?.name || "Admin"}</div>

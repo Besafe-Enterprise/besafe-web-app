@@ -1,12 +1,28 @@
 export type AlertStatus =
+  | "new"
   | "active"
-  | "dispatched"
+  | "pending_acceptance"
+  | "triaged"
+  | "reviewing"
+  | "assigned"
   | "acknowledged"
   | "resolved"
   | "false_alarm"
+  | "closed"
+  | "pending_analysis"
   | "all";
 
-export type AlertPriority = "high" | "medium" | "low";
+export const ACTIVE_CASE_STATUSES = [
+  "new",
+  "active",
+  "pending_acceptance",
+  "acknowledged",
+  "reviewing",
+  "triaged",
+  "assigned",
+] as const;
+
+export type AlertPriority = "critical" | "high" | "medium" | "low";
 export type IncidentType =
   | "sos"
   | "harassment"
@@ -76,8 +92,11 @@ export interface Alert {
   assigned_staff_id?: string | null;
   assigned_staff_name?: string | null;
   assigned_at?: string | null;
+  assignment_status?: "pending" | "accepted" | "declined" | null;
   status: AlertStatus;
   priority?: AlertPriority | string;
+  priority_label?: string;
+  priority_score?: number;
   incident_type?: IncidentType;
   category?: string;
   description?: string;
@@ -112,6 +131,7 @@ export interface Alert {
   notes?: string;
   field_evidence?: FieldEvidenceItem[];
   field_reports?: FieldReport[];
+  status_history?: Array<{ status: string; timestamp: string; actor?: string; detail?: string }>;
 }
 
 export interface FieldEvidenceItem {
@@ -129,6 +149,10 @@ export interface FieldReport {
   title: string;
   body: string;
   progress?: string | null;
+  review_status?: "draft" | "submitted" | "approved" | "changes_requested" | string;
+  review_feedback?: string;
+  submitted_at?: string;
+  reviewed_at?: string;
   created_by?: string;
   created_by_name?: string;
   created_at?: string;
@@ -174,14 +198,17 @@ export interface SafeChatAnswer {
 export interface Report {
   id: number | string;
   user_id?: number | string;
+  userId?: string;
   agency_id?: number | string;
   assignedAgencyId?: number | string;
   assigned_staff_id?: string | null;
   assigned_staff_name?: string | null;
   assigned_at?: string | null;
+  assignment_status?: "pending" | "accepted" | "declined" | null;
   category: string;
   incident_type?: string;
   priority?: string;
+  priority_label?: string;
   description: string;
   timing?: string;
   frequency?: string;
@@ -193,9 +220,11 @@ export interface Report {
   status:
     | "pending"
     | "pending_analysis"
+    | "pending_acceptance"
     | "investigating"
     | "triaged"
     | "reviewing"
+    | "assigned"
     | "resolved"
     | "closed"
     | string;
@@ -215,6 +244,8 @@ export interface Report {
     file_type?: string;
     file_url?: string;
   }>;
+  field_reports?: FieldReport[];
+  status_history?: Array<{ status: string; timestamp: string; actor?: string; detail?: string }>;
   created_at?: string;
   createdAt?: string;
   updated_at?: string;
@@ -253,6 +284,19 @@ export interface DashboardStats {
   avg_response_minutes?: number;
   safe_chat_reports_count?: number;
   dispatch_units_available?: number;
+  unassigned?: number;
+  assigned?: number;
+  new_cases?: number;
+  new_today?: number;
+  on_case?: number;
+  unassigned_alerts?: number;
+  unassigned_reports?: number;
+  assigned_alerts?: number;
+  assigned_reports?: number;
+  new_alerts_today?: number;
+  new_reports_today?: number;
+  total_alerts?: number;
+  total_reports?: number;
 }
 
 

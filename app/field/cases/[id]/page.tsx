@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, MapPin, Phone, FileText, AlertTriangle, Navigation, Image, File, Edit2, Save, X, Plus, Camera, MessageSquare } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, FileText, AlertTriangle, Navigation, Image, File, Edit2, Save, X, Plus, Camera, MessageSquare, Send, CheckCircle2, Eye, Clock, Video, Music } from "lucide-react";
+import EvidenceLightbox, { EvidenceLightboxItem } from "@/components/shared/EvidenceLightbox";
 import { Badge } from "@/components/operations/shared/Badge";
 import { Skeleton } from "@/components/operations/shared/LoadingSkeleton";
 import { WorkerStatusStepper } from "@/components/field/shared/WorkerStatusStepper";
 import { ErrorRetry } from "@/components/field/shared/ErrorRetry";
 import { useUpdateAlertStatus } from "@/lib/hooks/dispatch/use-dispatch-data";
-import { useFieldAlert, useUploadFieldEvidence, useAddFieldReport, useUpdateFieldReport } from "@/lib/field/use-field-data";
+import { useFieldAlert, useFieldProfile, useUploadFieldEvidence, useAddFieldReport, useUpdateFieldReport, useSubmitFieldReport, usePostFieldLocation, useAcceptFieldCase, useDeclineFieldCase } from "@/lib/field/use-field-data";
 import {
   workerStageFor,
   workerActionFor,
@@ -18,10 +19,18 @@ import {
   priorityVariant,
   incidentCoords,
 } from "@/lib/field/utils";
-import { incidentLabel, locationLabel, formatShortDate } from "@/lib/operations/utils";
+import { incidentLabel, locationLabel, formatShortDate, caseShortId } from "@/lib/operations/utils";
 import { toast } from "sonner";
 import type { FieldReport, FieldEvidenceItem } from "@/types";
 import "@/styles/field.css";
+
+let _popupId = 0;
+function dedupPopup(key: string, fn: () => void) {
+  if ((globalThis as Record<string, unknown>)[`_popup_${key}`]) return;
+  (globalThis as Record<string, unknown>)[`_popup_${key}`] = ++_popupId;
+  fn();
+  setTimeout(() => { delete (globalThis as Record<string, unknown>)[`_popup_${key}`]; }, 2500);
+}
 
 export default function FieldCaseDetailPage() {
   const params = useParams();
@@ -32,10 +41,17 @@ export default function FieldCaseDetailPage() {
   const uploadEvidence = useUploadFieldEvidence();
   const addReport = useAddFieldReport();
   const updateReport = useUpdateFieldReport();
+  const submitReport = useSubmitFieldReport();
 
   const stage = workerStageFor(alert);
   const action = workerActionFor(stage);
   const nextStatus = NEXT_STATUS[stage];
+
+  const postLocation = usePostFieldLocation();
+  const acceptCase = useAcceptFieldCase();
+  const declineCase = useDeclineFieldCase();
+  const [checkInNote, setCheckInNote] = useState("");
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
   const [evidenceType, setEvidenceType] = useState("photo");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -47,6 +63,129 @@ export default function FieldCaseDetailPage() {
   const [editReportTitle, setEditReportTitle] = useState("");
   const [editReportBody, setEditReportBody] = useState("");
   const [editReportProgress, setEditReportProgress] = useState("");
+  const [preview, setPreview] = useState<EvidenceLightboxItem | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      setTimeout(() => document.querySelector(window.location.hash)?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    }
+  }, [alert]);
+
+  const prevPostLocation = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (postLocation.isSuccess && !prevPostLocation.current.isSuccess) {
+      dedupPopup("checkin", () => toast.success("Check-in sent"));
+      setCheckingIn(null);
+    }
+    if (postLocation.isError && !prevPostLocation.current.isError) {
+      toast.error("Check-in failed");
+      setCheckingIn(null);
+    }
+    prevPostLocation.current = { isSuccess: postLocation.isSuccess, isError: postLocation.isError };
+  }, [postLocation.isSuccess, postLocation.isError]);
+
+  const prevUpload = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (uploadEvidence.isSuccess && !prevUpload.current.isSuccess) {
+      toast.dismiss("evidence-failed");
+      toast.success("Evidence uploaded", { id: "evidence-uploaded" });
+      setEvidenceFile(null);
+      setEvidencePreview(null);
+    }
+    if (uploadEvidence.isError && !prevUpload.current.isError) {
+      toast.dismiss("evidence-uploaded");
+      toast.error("Upload failed", { id: "evidence-failed" });
+    }
+    prevUpload.current = { isSuccess: uploadEvidence.isSuccess, isError: uploadEvidence.isError };
+  }, [uploadEvidence.isSuccess, uploadEvidence.isError]);
+
+  const prevAddReport = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (addReport.isSuccess && !prevAddReport.current.isSuccess) {
+      dedupPopup("addreport", () => toast.success("Report added"));
+      setShowAddReport(false);
+      setReportTitle("");
+      setReportBody("");
+    }
+    if (addReport.isError && !prevAddReport.current.isError) {
+      toast.error("Failed to add report");
+    }
+    prevAddReport.current = { isSuccess: addReport.isSuccess, isError: addReport.isError };
+  }, [addReport.isSuccess, addReport.isError]);
+
+  const prevUpdateReport = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (updateReport.isSuccess && !prevUpdateReport.current.isSuccess) {
+      dedupPopup("updatereport", () => toast.success("Report updated"));
+      setEditingReportId(null);
+    }
+    if (updateReport.isError && !prevUpdateReport.current.isError) {
+      toast.error("Failed to update report");
+    }
+    prevUpdateReport.current = { isSuccess: updateReport.isSuccess, isError: updateReport.isError };
+  }, [updateReport.isSuccess, updateReport.isError]);
+
+  const prevSubmitReport = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (submitReport.isSuccess && !prevSubmitReport.current.isSuccess) {
+      dedupPopup("submitreport", () => toast.success("Report submitted for review"));
+    }
+    if (submitReport.isError && !prevSubmitReport.current.isError) {
+      toast.error("Failed to submit report");
+    }
+    prevSubmitReport.current = { isSuccess: submitReport.isSuccess, isError: submitReport.isError };
+  }, [submitReport.isSuccess, submitReport.isError]);
+
+  const prevAccept = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (acceptCase.isError && !prevAccept.current.isError) {
+      toast.error("Failed to accept case");
+    }
+    prevAccept.current = { isSuccess: acceptCase.isSuccess, isError: acceptCase.isError };
+  }, [acceptCase.isSuccess, acceptCase.isError]);
+
+  const prevDecline = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (declineCase.isSuccess && !prevDecline.current.isSuccess) {
+      dedupPopup("decline", () => toast.success("Assignment declined"));
+      router.replace("/field");
+    }
+    if (declineCase.isError && !prevDecline.current.isError) {
+      toast.error("Failed to decline");
+    }
+    prevDecline.current = { isSuccess: declineCase.isSuccess, isError: declineCase.isError };
+  }, [declineCase.isSuccess, declineCase.isError, router]);
+
+  const prevStatus = useRef({ isSuccess: false, isError: false });
+  useEffect(() => {
+    if (updateStatus.isSuccess && !prevStatus.current.isSuccess) {
+      dedupPopup("status", () => toast.success("Status updated"));
+    }
+    if (updateStatus.isError && !prevStatus.current.isError) {
+      toast.error("Failed to update status");
+    }
+    prevStatus.current = { isSuccess: updateStatus.isSuccess, isError: updateStatus.isError };
+  }, [updateStatus.isSuccess, updateStatus.isError]);
+
+  const handleCheckIn = (status: string) => {
+    if (!alert) return;
+    setCheckingIn(status);
+    const done = (lat: number, lng: number) => {
+      postLocation.mutate({ lat, lng, status, note: checkInNote.trim() || undefined, alert_id: String(alert.id) });
+    };
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported");
+      setCheckingIn(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => done(pos.coords.latitude, pos.coords.longitude),
+      () => {
+        postLocation.mutate({ lat: 0, lng: 0, status, note: checkInNote.trim() || undefined, alert_id: String(alert.id) });
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   const handleAdvance = () => {
     if (!alert || !nextStatus) return;
@@ -66,33 +205,12 @@ export default function FieldCaseDetailPage() {
 
   const handleUploadEvidence = async () => {
     if (!evidenceFile || !alert) return;
-    uploadEvidence.mutate(
-      { alertId: alert.id, file: evidenceFile, fileType: evidenceType },
-      {
-        onSuccess: () => {
-          setEvidenceFile(null);
-          setEvidencePreview(null);
-          toast.success("Evidence uploaded");
-        },
-        onError: () => toast.error("Upload failed"),
-      }
-    );
+    uploadEvidence.mutate({ alertId: String(alert.id), file: evidenceFile, fileType: evidenceType });
   };
 
   const handleAddReport = () => {
     if (!reportBody.trim() && !reportTitle.trim()) return;
-    addReport.mutate(
-      { alertId: alert!.id, data: { title: reportTitle, body: reportBody } },
-      {
-        onSuccess: () => {
-          setShowAddReport(false);
-          setReportTitle("");
-          setReportBody("");
-          toast.success("Report added");
-        },
-        onError: () => toast.error("Failed to add report"),
-      }
-    );
+    addReport.mutate({ alertId: String(alert!.id), data: { title: reportTitle, body: reportBody } });
   };
 
   const handleEditReport = (report: FieldReport) => {
@@ -103,16 +221,7 @@ export default function FieldCaseDetailPage() {
   };
 
   const handleSaveReport = (reportId: string) => {
-    updateReport.mutate(
-      { alertId: alert!.id, reportId, data: { title: editReportTitle, body: editReportBody, progress: editReportProgress } },
-      {
-        onSuccess: () => {
-          setEditingReportId(null);
-          toast.success("Report updated");
-        },
-        onError: () => toast.error("Failed to update report"),
-      }
-    );
+    updateReport.mutate({ alertId: String(alert!.id), reportId, data: { title: editReportTitle, body: editReportBody, progress: editReportProgress } });
   };
 
   const handleCancelReport = () => {
@@ -150,6 +259,67 @@ export default function FieldCaseDetailPage() {
     );
   }
 
+  if (alert.status === "resolved" || alert.status === "closed" || alert.status === "false_alarm") {
+    return (
+      <div className="field-case-view">
+        <div className="field-case-view__topbar">
+          <button className="field-case-view__back" onClick={() => router.back()}>
+            <ArrowLeft width={18} height={18} />
+            <span>Back</span>
+          </button>
+        </div>
+        <div className="field-case-view__empty">
+          <AlertTriangle width={36} height={36} />
+          <h2>Case closed</h2>
+          <p>This case has been {alert.status === "resolved" ? "resolved" : alert.status === "false_alarm" ? "marked as false alarm" : "closed"}. Only your agency admin can access it.</p>
+          <button className="field-primary-btn field-primary-btn--block" onClick={() => router.replace("/field")}>
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === "assigned") {
+    return (
+      <div className="field-case-view">
+        <div className="field-case-view__topbar">
+          <button className="field-case-view__back" onClick={() => router.back()}>
+            <ArrowLeft width={18} height={18} />
+            <span>Back</span>
+          </button>
+        </div>
+        <div className="field-case-view__title">
+          <h1 title={String(alert.id)}>{caseShortId(alert.id)}</h1>
+          <p>{incidentLabel(alert.incident_type, alert.description)}</p>
+        </div>
+        <div className="field-detail-card" style={{ textAlign: "center", padding: "var(--space-6)" }}>
+          <AlertTriangle width={32} height={32} style={{ margin: "0 auto 12px", color: "var(--color-warning, #F59E0B)" }} />
+          <h2 style={{ fontSize: "var(--text-lg)", fontWeight: 700, marginBottom: 8 }}>Pending Your Acceptance</h2>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", marginBottom: "var(--space-4)", maxWidth: 360, margin: "0 auto var(--space-4)" }}>
+            You&apos;ve been assigned to this case. Accept to view full details, add evidence, and file reports. You cannot access case details until you accept.
+          </p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            <button
+              className="field-primary-btn"
+              disabled={acceptCase.isPending || declineCase.isPending}
+              onClick={() => acceptCase.mutate({ caseId })}
+            >
+              <CheckCircle2 width={16} height={16} /> {acceptCase.isPending ? "Accepting…" : "Accept Case"}
+            </button>
+            <button
+              className="field-secondary-btn"
+              disabled={acceptCase.isPending || declineCase.isPending}
+              onClick={() => declineCase.mutate({ caseId })}
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const incident = incidentLabel(alert.incident_type, alert.description);
   const location = locationLabel(alert);
   const priority = priorityVariant(alert.priority);
@@ -158,8 +328,7 @@ export default function FieldCaseDetailPage() {
   const timeline: { label: string; time: string | null }[] = [
     { label: "Incident reported", time: alert.created_at },
     alert.assigned_at ? { label: `Assigned to ${alert.assigned_staff_name || "you"}`, time: alert.assigned_at } : null,
-    stage !== "active" ? { label: "Assignment accepted", time: alert.updated_at } : null,
-    alert.status === "resolved" ? { label: "Case completed", time: alert.resolved_at || alert.updated_at } : null,
+    stage !== "new" ? { label: "Assignment accepted", time: alert.updated_at } : null,
   ].filter(Boolean) as { label: string; time: string | null }[];
 
   const evidence = (alert.field_evidence as FieldEvidenceItem[]) || [];
@@ -180,8 +349,8 @@ export default function FieldCaseDetailPage() {
       </div>
 
       <div className="field-case-view__title">
-        <h1>Case #{alert.id}</h1>
-        <p>{incident}</p>
+        <h1 title={String(alert.id)}>{caseShortId(alert.id)}</h1>
+        <p>{incident} &middot; {String(alert.priority || "")}</p>
       </div>
 
       <div className="field-case-view__stepper-wrap">
@@ -190,22 +359,67 @@ export default function FieldCaseDetailPage() {
 
       <div className="field-detail-card">
         <div className="field-detail-row">
+          <span className="field-detail-row__label">Status</span>
+          <span className="field-detail-row__value">
+            <Badge variant={statusBadgeVariant(alert.status)} tone="status">{statusLabel}</Badge>
+          </span>
+        </div>
+        <div className="field-detail-row">
           <span className="field-detail-row__label">Priority</span>
-          <Badge variant={priority} tone="priority">
-            {alert.priority || "medium"}
-          </Badge>
+          <span className="field-detail-row__value">{String(alert.priority || "—")}</span>
+        </div>
+        <div className="field-detail-row">
+          <span className="field-detail-row__label">Submitted</span>
+          <span className="field-detail-row__value"><Clock width={12} height={12} /> {formatShortDate(alert.created_at)}</span>
         </div>
         <div className="field-detail-row">
           <span className="field-detail-row__label">Location</span>
-          <span className="field-detail-row__value">
-            <MapPin width={14} height={14} /> {location}
-          </span>
+          <span className="field-detail-row__value"><MapPin width={12} height={12} /> {location}</span>
         </div>
+        {alert.assigned_staff_name && (
+          <div className="field-detail-row" style={{ marginBottom: "10px" }}>
+            <span className="field-detail-row__label">Handler</span>
+            <span className="field-detail-row__value">{alert.assigned_staff_name}</span>
+          </div>
+        )}
         {coords && (
           <button className="field-inline-btn" onClick={() => router.push(`/field/map?case=${alert.id}`)}>
             <Navigation width={14} height={14} /> Open Map for directions
           </button>
         )}
+      </div>
+
+      {/* Check-in — was missing, now posts to /field/location with status */}
+      <div className="field-detail-section">
+        <div className="field-detail-section__label">
+          <Navigation width={14} height={14} /> Check-in
+        </div>
+        <p className="field-detail-section__text" style={{ marginBottom: 8, fontSize: "var(--text-xs)", color: "var(--color-text-tertiary)" }}>
+          Share your live status with dispatch — this powers the agency Live Map and timeline.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+          {[
+            ["en_route", "En route"],
+            ["on_site", "On site"],
+            ["safe", "Safe"],
+          ].map(([val, label]) => (
+            <button
+              key={val}
+              className="field-primary-btn field-primary-btn--sm"
+              disabled={!!checkingIn}
+              onClick={() => handleCheckIn(val)}
+              style={{ opacity: checkingIn === val ? 0.7 : 1 }}
+            >
+              {checkingIn === val ? "Sending…" : label}
+            </button>
+          ))}
+        </div>
+        <input
+          className="field-input"
+          placeholder="Note (optional) — e.g., ETA 5 min, at gate"
+          value={checkInNote}
+          onChange={(e) => setCheckInNote(e.target.value)}
+        />
       </div>
 
       {alert.description && (
@@ -241,10 +455,10 @@ export default function FieldCaseDetailPage() {
       )}
 
       {/* Evidence */}
-      <div className="field-detail-section">
+      <div id="evidence" className="field-detail-section">
         <div className="field-detail-section__label-row">
-          <div className="field-detail-section__label">
-            <Image width={14} height={14} /> Evidence
+          <div className="field-detail-section__label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Image width={14} height={14} /> Evidence &middot; {evidence.length}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <select
@@ -287,38 +501,37 @@ export default function FieldCaseDetailPage() {
                 </div>
               )}
             </div>
-            <div className="field-evidence-preview__actions">
-              <button className="field-primary-btn field-primary-btn--sm" onClick={handleUploadEvidence} disabled={uploadEvidence.isPending}>
+            <div className="field-evidence-preview__actions" style={{marginTop:20}}>
+              <button className="field-primary-btn field-primary-btn--sm" onClick={handleUploadEvidence} disabled={uploadEvidence.isPending} style={{width:100}}> 
                 {uploadEvidence.isPending ? "Uploading..." : "Upload"}
               </button>
-              <button className="btn btn--ghost btn--sm" onClick={() => { setEvidenceFile(null); setEvidencePreview(null); }}>
+              <button className="btn btn--ghost btn--sm" style={{marginLeft:8, width:100}} onClick={() => { setEvidenceFile(null); setEvidencePreview(null); }}>
                 <X width={14} height={14} />
               </button>
             </div>
           </div>
         )}
-        {evidence.length > 0 && (
-          <div className="field-evidence-grid">
-            {evidence.map((item: FieldEvidenceItem, idx: number) => (
-              <div key={`${item.id}-${idx}`} className="field-evidence-item">
-                {item.type === "photo" && item.url ? (
-                  <img src={item.url} alt={item.name || "Evidence"} loading="lazy" />
-                ) : item.type === "video" && item.url ? (
-                  <video src={item.url} controls />
-                ) : item.type === "audio" && item.url ? (
-                  <audio src={item.url} controls />
-                ) : (
-                  <div className="field-evidence-doc">
-                    <File width={32} height={32} />
-                    <span>{item.name || "Document"}</span>
+        {evidence.length === 0 ? (
+          <p className="text-tertiary" style={{ fontSize: "var(--text-sm)", marginTop: 8 }}>No evidence yet — add photos, video, audio or documents.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
+            {evidence.map((item: FieldEvidenceItem, idx: number) => {
+              const name = item.name || `file-${idx + 1}`;
+              const url = item.url || "";
+              const type = (item.type || "document").toLowerCase();
+              return (
+                <div key={`${item.id}-${idx}`} className="card" style={{ padding: 0, overflow: "hidden", cursor: url ? "pointer" : "default" }} onClick={() => url && setPreview({ url, type, name })}>
+                  <div style={{ aspectRatio: "4/3", background: "var(--color-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                    {(type.includes("image") || type === "photo") && url ? <img src={url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : type.includes("video") ? <Video width={24} height={24} /> : type.includes("audio") ? <Music width={24} height={24} /> : <File width={24} height={24} />}
                   </div>
-                )}
-                <div className="field-evidence-item__meta">
-                  <span>{item.name || "File"}</span>
-                  <span className="field-evidence-item__time">{item.uploaded_at ? new Date(item.uploaded_at).toLocaleString() : ""}</span>
+                  <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ fontSize: "var(--text-xs)", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                    <span className="text-tertiary" style={{ fontSize: "var(--text-xs)" }}>{item.uploaded_at ? new Date(item.uploaded_at).toLocaleString() : ""}</span>
+                    {url && <button type="button" onClick={(e) => { e.stopPropagation(); setPreview({ url, type, name }); }} style={{ fontSize: "var(--text-xs)", display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, color: "var(--color-brand)", cursor: "pointer" }}><Eye width={12} height={12} /> Preview</button>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -369,7 +582,7 @@ export default function FieldCaseDetailPage() {
         {reports.length > 0 && (
           <div className="field-reports-list">
             {reports.map((report: FieldReport, idx: number) => (
-              <div key={`${report.id}-${idx}`} className="field-report-item">
+              <div key={`${report.id}-${idx}`} id={`report-${report.id}`} className="field-report-item" data-review={report.review_status || "draft"}>
                 {editingReportId === report.id ? (
                   <div className="field-report-edit">
                     <div className="field-edit-row">
@@ -407,13 +620,46 @@ export default function FieldCaseDetailPage() {
                         <span>{report.created_by_name || "Field Worker"}</span>
                         <span className="field-report-view__time">{report.created_at ? new Date(report.created_at).toLocaleString() : ""}</span>
                         {report.progress && <span className="field-report-progress">{report.progress}</span>}
+                        <span className={`field-report-review field-report-review--${report.review_status || "draft"}`}>
+                          {(report.review_status || "draft").replace(/_/g, " ")}
+                        </span>
                       </div>
                     </div>
                     <div className="field-report-view__body">{report.body}</div>
+                    {report.review_status === "approved" && (
+                      <div className="field-report-feedback field-report-feedback--approved">
+                        <CheckCircle2 width={14} height={14} />
+                        <span>Approved by the agency{report.reviewed_at ? ` • ${new Date(report.reviewed_at).toLocaleString()}` : ""}.</span>
+                      </div>
+                    )}
+                    {report.review_status === "changes_requested" && report.review_feedback && (
+                      <div className="field-report-feedback field-report-feedback--objection">
+                        <span className="field-report-feedback__label">Agency objections:</span>
+                        <span>{report.review_feedback}</span>
+                      </div>
+                    )}
                     <div className="field-report-view__actions">
-                      <button className="btn btn--ghost btn--sm" onClick={() => handleEditReport(report)}>
-                        <Edit2 width={14} height={14} /> Edit
-                      </button>
+                      {(!report.review_status || report.review_status === "draft") && (
+                        <>
+                          <button className="btn btn--ghost btn--sm" onClick={() => handleEditReport(report)}>
+                            <Edit2 width={14} height={14} /> Edit
+                          </button>
+                          <button
+                            className="field-primary-btn field-primary-btn--sm"
+                            disabled={submitReport.isPending}
+                            onClick={() =>
+                              submitReport.mutate(
+                                { alertId: String(alert.id), reportId: String(report.id) }
+                              )
+                            }
+                          >
+                            <Send width={14} height={14} /> {submitReport.isPending ? "Submitting..." : "Submit for check"}
+                          </button>
+                        </>
+                      )}
+                      {report.review_status === "submitted" && (
+                        <span className="field-report-pending">Waiting for agency check…</span>
+                      )}
                     </div>
                     {report.updated_at && report.updated_at !== report.created_at && (
                       <div className="field-report-view__updated">Updated: {new Date(report.updated_at).toLocaleString()}</div>
@@ -444,8 +690,8 @@ export default function FieldCaseDetailPage() {
         </div>
       </div>
 
-      <div className="field-action-bar">
-        {action ? (
+      {action && (
+        <div className="field-action-bar">
           <button
             className={`field-primary-btn field-primary-btn--block field-primary-btn--${action.tone}`}
             onClick={handleAdvance}
@@ -453,13 +699,9 @@ export default function FieldCaseDetailPage() {
           >
             {updateStatus.isPending ? "Updating..." : action.label}
           </button>
-        ) : (
-          <div className="field-success-banner">
-            <AlertTriangle width={18} height={18} />
-            <span>This case is complete. No further action needed.</span>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+      <EvidenceLightbox item={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }

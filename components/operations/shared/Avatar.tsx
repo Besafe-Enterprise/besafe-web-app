@@ -13,11 +13,19 @@ export function initialsOf(name?: string | null, fallback = "U"): string {
 
 interface AvatarProps {
   name?: string | null;
+  src?: string | null;
   size?: "sm" | "default" | "lg";
 }
 
-export function Avatar({ name, size = "default" }: AvatarProps) {
+export function Avatar({ name, src, size = "default" }: AvatarProps) {
+  const [failed, setFailed] = React.useState(false);
+  const showImg = !!src && !failed;
   return (
-    <span className={`avatar avatar--${size}`}>{initialsOf(name)}</span>
+    <span className={`avatar avatar--${size}`} style={showImg ? { backgroundImage: `url("${src}")`, backgroundSize: "cover", backgroundPosition: "center", color: "transparent" } : undefined}>
+      {!showImg && initialsOf(name)}
+      {showImg && (
+        <img src={src} alt={name || "avatar"} style={{ display: "none" }} onError={() => setFailed(true)} />
+      )}
+    </span>
   );
 }

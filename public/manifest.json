@@ -3,6 +3,7 @@
   "short_name": "BeSafe Field",
   "description": "Mobile-first response console for field workers. View assigned cases, update status, and navigate incidents on the go.",
   "start_url": "/field",
+  "scope": "/field",
   "id": "/field",
   "display": "standalone",
   "orientation": "portrait",

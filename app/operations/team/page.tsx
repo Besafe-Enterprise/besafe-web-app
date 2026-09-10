@@ -157,6 +157,7 @@ export default function TeamPage() {
               <tr>
                 <th>Name</th>
                 <th>Role</th>
+                <th>Cases</th>
                 <th>Status</th>
                 <th>Last Updated</th>
                 <th>Created</th>
@@ -176,6 +177,11 @@ export default function TeamPage() {
                     </div>
                   </td>
                   <td>{t.role}</td>
+                  <td>
+                    <Badge variant={(t.active_cases ?? 0) > 0 ? "active" : "secondary"} tone="status">
+                      {t.active_cases ?? 0}
+                    </Badge>
+                  </td>
                   <td>
                     <Badge variant={t.is_active ? "available" : "offline"} tone="worker">
                       {t.is_active ? "ACTIVE" : "INACTIVE"}

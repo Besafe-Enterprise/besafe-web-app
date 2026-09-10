@@ -6,7 +6,8 @@ import { useGetAlerts } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { useAlertStore } from "@/stores/useAlertStore";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
 import { fieldWorkerApi } from "@/lib/api";
-import type { Alert, FieldNotification, FieldCheckIn } from "@/types";
+import type { Alert } from "@/types";
+import { ACTIVE_CASE_STATUSES } from "@/types";
 
 function mergeAlerts(base: Alert[], realtime: Alert[]): Alert[] {
   const map = new Map<string, Alert>();
@@ -23,12 +24,12 @@ function mergeAlerts(base: Alert[], realtime: Alert[]): Alert[] {
  */
 export function useFieldWorkerAlerts() {
   const user = useAgencyAuthStore((s) => s.user);
-  const { data: alerts, isLoading, isError, refetch } = useGetAlerts();
+  const { data: alertsResp, isLoading, isError, refetch } = useGetAlerts({ limit: 500 });
   const realtimeAlerts = useAlertStore((s) => s.alerts);
 
   const merged = React.useMemo(
-    () => mergeAlerts(alerts || [], realtimeAlerts || []),
-    [alerts, realtimeAlerts]
+    () => mergeAlerts((alertsResp?.items ?? []) || [], realtimeAlerts || []),
+    [alertsResp, realtimeAlerts]
   );
 
   const myId = user?.id;
@@ -51,11 +52,13 @@ export function useFieldWorkerAlerts() {
   };
 }
 
-/** Active (open) cases needing response. */
+/** Active (open) cases needing response — pending or accepted, with active status. Excludes resolved/closed. */
 export function useFieldActiveAlerts() {
   const src = useFieldWorkerAlerts();
   const active = React.useMemo(
-    () => src.alerts.filter((a) => a.status !== "resolved" && a.status !== "false_alarm"),
+    () => src.alerts.filter(
+      (a) => (a.assignment_status === "accepted" || a.assignment_status === "pending") && (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status)
+    ),
     [src.alerts]
   );
   return { ...src, alerts: active };
@@ -112,8 +115,17 @@ export function useUploadFieldAvatar() {
     mutationFn: async (file: File) => {
       return await fieldWorkerApi.uploadAvatar(file);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["field", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "team"] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "team", "detail"] });
+      // Also update the cached profile directly with returned S3 url for instant preview
+      if ((data as unknown as { profile?: { avatar_url?: string } })?.profile?.avatar_url) {
+        queryClient.setQueryData(["field", "me"], (old: unknown) => {
+          if (old && typeof old === "object") return { ...(old as Record<string, unknown>), avatar_url: (data as unknown as { profile: { avatar_url: string } }).profile.avatar_url };
+          return old;
+        });
+      }
     },
   });
 }
@@ -172,6 +184,7 @@ export function useUploadFieldEvidence() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["field", "alert", variables.alertId] });
     },
+    retry: 0,
   });
 }
 
@@ -181,6 +194,19 @@ export function useAddFieldReport() {
   return useMutation({
     mutationFn: async ({ alertId, data }: { alertId: string; data: { title?: string; body: string; progress?: string } }) => {
       return await fieldWorkerApi.addReport(alertId, data);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "alert", variables.alertId] });
+    },
+  });
+}
+
+/** Submit report to agency for check. */
+export function useSubmitFieldReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ alertId, reportId }: { alertId: string; reportId: string }) => {
+      return await fieldWorkerApi.submitReport(alertId, reportId);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["field", "alert", variables.alertId] });
@@ -198,6 +224,187 @@ export function useUpdateFieldReport() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["field", "alert", variables.alertId] });
     },
+  });
+}
+
+export function useUploadFieldReportEvidence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, file, fileType }: { reportId: string; file: File; fileType: string }) => {
+      return await fieldWorkerApi.uploadReportEvidence(reportId, file, fileType);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+    retry: 0,
+  });
+}
+
+export function useUpdateFieldReportStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, status }: { reportId: string; status: string }) => {
+      return await fieldWorkerApi.updateReportStatus(reportId, status);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+  });
+}
+
+export function useAddFieldReportNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, title, body, progress }: { reportId: string; title?: string; body: string; progress?: string }) => {
+      return await fieldWorkerApi.addReportNote(reportId, { title, body, progress });
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+  });
+}
+
+export function useSubmitFieldReportNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, noteId }: { reportId: string; noteId: string }) => {
+      return await fieldWorkerApi.submitReportNote(reportId, noteId);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+  });
+}
+
+export function useAcceptFieldReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId }: { reportId: string }) => {
+      return await fieldWorkerApi.acceptReport(reportId);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+  });
+}
+
+export function useDeclineFieldReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId }: { reportId: string }) => {
+      return await fieldWorkerApi.declineReport(reportId);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports", v.reportId] });
+    },
+  });
+}
+
+export function useAcceptFieldCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseId }: { caseId: string }) => {
+      return await fieldWorkerApi.acceptCase(caseId);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts", v.caseId] });
+    },
+  });
+}
+
+export function useDeclineFieldCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseId }: { caseId: string }) => {
+      return await fieldWorkerApi.declineCase(caseId);
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts", v.caseId] });
+    },
+  });
+}
+
+export function useGoOnCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseId }: { caseId: string }) => {
+      return await fieldWorkerApi.goOnCase(caseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts"] });
+    },
+  });
+}
+
+export function useGoOffCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseId }: { caseId: string }) => {
+      return await fieldWorkerApi.goOffCase(caseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "alerts"] });
+    },
+  });
+}
+
+export function useGoOnReportCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId }: { reportId: string }) => {
+      return await fieldWorkerApi.goOnReportCase(reportId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+    },
+  });
+}
+
+export function useGoOffReportCase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId }: { reportId: string }) => {
+      return await fieldWorkerApi.goOffReportCase(reportId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["field", "reports"] });
+    },
+  });
+}
+
+/** Assigned SafeChat reports (reported cases) for this field worker — polled + socket invalidated. */
+export function useFieldReports() {
+  return useQuery({
+    queryKey: ["field", "reports"],
+    queryFn: async () => {
+      return await fieldWorkerApi.getReports();
+    },
+    staleTime: 15 * 1000,
+    refetchInterval: 15 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useFieldReport(reportId?: string) {
+  return useQuery({
+    queryKey: ["field", "reports", reportId],
+    queryFn: async () => {
+      if (!reportId) throw new Error("reportId required");
+      return await fieldWorkerApi.getReport(reportId);
+    },
+    enabled: !!reportId,
   });
 }
 

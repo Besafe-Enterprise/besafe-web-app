@@ -7,21 +7,22 @@ import { useGetAlerts } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { useAlertStore } from "@/stores/useAlertStore";
 import { Badge } from "@/components/operations/shared/Badge";
 import { EmptyState } from "@/components/operations/shared/EmptyState";
+import { ACTIVE_CASE_STATUSES } from "@/types";
 import { SkeletonRow } from "@/components/operations/shared/LoadingSkeleton";
 import { displayPriority, formatShortDate, incidentLabel } from "@/lib/operations/utils";
 import { ClipboardList } from "lucide-react";
 
 export default function AssignmentsPage() {
   const router = useRouter();
-  const { data: alerts = [], isLoading } = useGetAlerts();
+  const { data: alertsResp, isLoading } = useGetAlerts({ limit: 500, include_resolved: true });
   const { alerts: liveAlerts } = useAlertStore();
   const [tab, setTab] = useState<"all" | "active" | "unassigned">("all");
 
-  const all = useMemo(() => (liveAlerts.length > 0 ? liveAlerts : alerts), [liveAlerts, alerts]);
+  const all = useMemo(() => (liveAlerts.length > 0 ? liveAlerts : (alertsResp?.items ?? [])), [liveAlerts, alertsResp]);
 
   const filtered = all.filter((a) => {
     if (tab === "unassigned") return !a.assigned_staff_id && !a.assigned_staff_name;
-    if (tab === "active") return a.status !== "resolved" && (a.assigned_staff_id || a.assigned_staff_name);
+    if (tab === "active") return (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status) && (a.assigned_staff_id || a.assigned_staff_name);
     return true;
   });
 

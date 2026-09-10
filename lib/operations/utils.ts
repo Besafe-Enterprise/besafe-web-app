@@ -3,16 +3,13 @@ import type { AgencyProfile, StaffMember } from "@/types/auth";
 
 export const CASE_STAGES = [
   "new",
-  "triaged",
+  "pending_acceptance",
   "assigned",
-  "accepted",
-  "en route",
-  "on site",
-  "investigating",
-  "pending review",
-  "changes requested",
+  "acknowledged",
+  "reviewing",
   "resolved",
   "closed",
+  "false_alarm",
 ] as const;
 
 export type CaseStatus = (typeof CASE_STAGES)[number];
@@ -99,6 +96,34 @@ export function incidentLabel(incident_type?: string | null, description?: strin
   }
   if (description) return description.slice(0, 60);
   return "Safety Incident";
+}
+
+export function shortId(id: string | number | null | undefined, prefix = "BS"): string {
+  if (id == null || id === "") return `#${prefix}-—`;
+  const s = String(id).replace(/[^a-zA-Z0-9]/g, "");
+  if (s.length <= 8) return `#${prefix}-${s.toUpperCase()}`;
+  const tail = s.slice(-6).toUpperCase();
+  return `#${prefix}-${tail}`;
+}
+export function caseShortId(id: string | number | null | undefined): string {
+  return shortId(id, "CASE");
+}
+export function reportShortId(id: string | number | null | undefined): string {
+  return shortId(id, "RPT");
+}
+
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return "< 1 min";
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 export function locationLabel(alert: Alert | Report): string {

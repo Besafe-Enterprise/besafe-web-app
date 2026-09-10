@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -43,6 +43,7 @@ import { fieldWorkerApi, type AgencyOption } from "@/lib/api";
 import { toast } from "sonner";
 import type { ApiFieldError } from "@/types/auth";
 import "@/styles/register.css";
+import "@/styles/login.css";
 
 interface ApiError {
   response?: {
@@ -71,6 +72,13 @@ const LocationMapPicker = dynamic(
 /* ════════════════════════════════════════════════════════════
    AGENCY REGISTRATION WIZARD (existing flow)
    ════════════════════════════════════════════════════════════ */
+
+function getPwdStrength(pw: string) {
+  if (!pw) return { label: "", score: 0, color: "" };
+  if (pw.length < 6) return { label: "Weak", score: 25, color: "var(--color-error)" };
+  if (pw.length < 10) return { label: "Medium", score: 60, color: "var(--color-warning)" };
+  return { label: "Strong", score: 100, color: "var(--color-success)" };
+}
 
 const STEPS = [
   { id: 1, title: "Identity", subtitle: "Agency Profile", icon: Building2 },
@@ -103,8 +111,8 @@ function AgencyRegisterWizard() {
       name: "",
       region: "",
       phone_number: "",
-      lat: 15.5007,
-      lng: 32.5599,
+      lat:  9.585,
+      lng: 6.546,
       email: "",
       password: "",
     },
@@ -233,7 +241,7 @@ function AgencyRegisterWizard() {
                     <Building2 size={16} className="input-icon" />
                     <Input
                       id="name"
-                      placeholder="e.g. Metropolitan Police Division 4"
+                      placeholder="e.g. Minna Police Department"
                       className={errors.name ? "error" : ""}
                       style={{ paddingLeft: 40 }}
                       {...register("name")}
@@ -263,12 +271,12 @@ function AgencyRegisterWizard() {
                   </div>
 
                   <div className="register-field">
-                    <Label htmlFor="phone_number">Dispatch Contact Phone</Label>
+                    <Label htmlFor="phone_number">Agency Contact Phone</Label>
                     <div className="input-wrapper">
                       <Phone size={16} className="input-icon" />
                       <Input
                         id="phone_number"
-                        placeholder="+1 (800) 555-0199"
+                        placeholder="+234 000 000 0000"
                         className={errors.phone_number ? "error" : ""}
                         style={{ paddingLeft: 40 }}
                         {...register("phone_number")}
@@ -308,13 +316,6 @@ function AgencyRegisterWizard() {
                     {errors.lat?.message || errors.lng?.message}
                   </p>
                 )}
-
-                <div className="register-info-box">
-                  <ShieldCheck size={16} />
-                  <span>
-                    BeSafe&apos;s geospatial proximity engine automatically routes distress alerts within your agency&apos;s operational radius.
-                  </span>
-                </div>
               </div>
             )}
 
@@ -345,9 +346,9 @@ function AgencyRegisterWizard() {
                       <span className="summary-value summary-value--muted">{stationPlaceLabel}</span>
                     </div>
                   )}
-                  <div className="register-summary-row">
+                  <div className="register-summary-row register-summary-row--location">
                     <span className="summary-label">Agency Coordinates:</span>
-                    <span className="summary-value summary-value--mono">{formValues.lat}&deg; N, {formValues.lng}&deg; E</span>
+                    <span className="summary-value summary-value--pill"><MapPin size={12} /> {stationPlaceLabel ? stationPlaceLabel.split(",").slice(0,2).join(",") : "Pinned on map"}</span>
                   </div>
                 </div>
 
@@ -359,7 +360,7 @@ function AgencyRegisterWizard() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="dispatch@police.gov"
+                      placeholder="agency@police.gov"
                       className={`${errors.email || apiError?.field === "email" ? "error" : ""}`}
                       style={{ paddingLeft: 40 }}
                       {...register("email")}
@@ -396,6 +397,17 @@ function AgencyRegisterWizard() {
                   </div>
                   {errors.password && (
                     <p className="field-error">{errors.password.message}</p>
+                  )}
+                  {formValues.password && (
+                    <div className="login-strength" style={{ marginTop: 8 }}>
+                      <div className="login-strength-label">
+                        <span>Strength: </span>
+                        <span style={{ color: getPwdStrength(formValues.password).color }}>{getPwdStrength(formValues.password).label}</span>
+                      </div>
+                      <div className="login-strength-bar">
+                        <div className="login-strength-bar__fill" style={{ width: `${getPwdStrength(formValues.password).score}%`, background: getPwdStrength(formValues.password).color }} />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -479,12 +491,7 @@ const FW_STEPS = [
   { id: 3, title: "Password", subtitle: "Secure your account" },
 ];
 
-function fwStrength(pw: string) {
-  if (!pw) return { label: "", score: 0, color: "" };
-  if (pw.length < 6) return { label: "Weak", score: 25, color: "var(--color-error)" };
-  if (pw.length < 10) return { label: "Medium", score: 60, color: "var(--color-warning)" };
-  return { label: "Strong", score: 100, color: "var(--color-success)" };
-}
+function fwStrength(pw: string) { return getPwdStrength(pw); }
 
 function FieldWorkerRegister() {
   const [showPassword, setShowPassword] = useState(false);
@@ -579,7 +586,7 @@ function FieldWorkerRegister() {
         apiErr?.response?.data?.message ||
         "Failed to submit your application. Please try again.";
       toast.error(message);
-      setApiError({ field: "root", message });
+      // setApiError({ field: "root", message });
       setIsSubmitting(false);
     }
   };
@@ -780,7 +787,7 @@ function FieldWorkerRegister() {
                   <Input
                     id="femail"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="fieldworker@example.com"
                     className={errors.email ? "error" : ""}
                     style={{ paddingLeft: 40 }}
                     {...register("email", { required: "Email is required" })}
@@ -795,7 +802,7 @@ function FieldWorkerRegister() {
                   <Phone size={16} className="input-icon" />
                   <Input
                     id="fphone"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+234 000 000 0000"
                     className={errors.phone_number ? "error" : ""}
                     style={{ paddingLeft: 40 }}
                     {...register("phone_number", { required: "Phone number is required" })}
@@ -950,10 +957,17 @@ export default function RegisterPage() {
 
 function RegisterPageInner() {
   const searchParams = useSearchParams();
-  const isFieldOnly = searchParams.get("role") === "field";
+  const router = useRouter();
+  const roleParam = searchParams.get("role");
+  const isPWA = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as { standalone?: boolean }).standalone === true);
+  const isFieldOnly = roleParam === "field" || isPWA;
   const [registerRole, setRegisterRole] = useState<"admin" | "field">(
     isFieldOnly ? "field" : "admin"
   );
+
+  useEffect(() => {
+    if (isPWA && roleParam !== "field") router.replace("/register?role=field");
+  }, [isPWA, roleParam, router]);
 
   return (
     <div className="register-page">

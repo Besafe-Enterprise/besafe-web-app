@@ -41,6 +41,8 @@ export interface StaffMember {
   role: StaffRole;
   is_active: boolean;
   must_change_password?: boolean;
+  active_cases?: number;
+  avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }

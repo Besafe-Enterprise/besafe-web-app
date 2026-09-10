@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Search,
   MapPin,
@@ -157,7 +158,13 @@ export default function LocationMapPicker({
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
+    // Fix half-height on flex/grid parents
+    const ro = new ResizeObserver(() => map.resize());
+    ro.observe(mapContainerRef.current);
+    setTimeout(() => map.resize(), 200);
+
     return () => {
+      ro.disconnect();
       map.remove();
     };
   }, []);
@@ -266,14 +273,15 @@ export default function LocationMapPicker({
   };
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* ─── Search Bar ────────────────────────────────────────────── */}
-      <div className="relative">
-        <Label htmlFor="station-search" className="text-xs font-semibold text-foreground mb-1.5 block">
+    <div className={`${className}`} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* ─── Search Bar — Professional · Spacious ─────────────────── */}
+      <div style={{ position: "relative" }}>
+        <Label htmlFor="station-search" style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-tertiary)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ width: 20, height: 20, borderRadius: 7, background: "var(--color-brand)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 8px rgba(59,111,232,0.25)" }}><Search size={11} /></span>
           Search Station Address, City, or Landmark
         </Label>
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", height: 48, borderRadius: 14, background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", overflow: "hidden", transition: "border-color 0.15s, boxShadow 0.15s" }}>
+          <span style={{ position: "absolute", left: 14, display: "flex", color: "var(--color-text-tertiary)", pointerEvents: "none" }}><Search size={16} /></span>
           <Input
             id="station-search"
             value={searchQuery}
@@ -281,11 +289,11 @@ export default function LocationMapPicker({
             onFocus={() => {
               if (searchResults.length > 0) setShowDropdown(true);
             }}
-            placeholder="e.g. Victoria Island, Lagos or Westminster, London"
-            className="pl-10 pr-10 text-sm bg-background/70 border-input text-foreground focus-visible:ring-primary/60"
+            placeholder="e.g. Federal HQ, 123 Main St, Minna,Niger State"
+            style={{ flex: 1, height: "100%", paddingLeft: 44, paddingRight: 44, fontSize: 13.5, fontWeight: 500, background: "transparent", border: "none", boxShadow: "none" }}
           />
           {isSearching && (
-            <Loader2 className="absolute top-1/2 right-3 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+            <span style={{ position: "absolute", right: 14, display: "flex", color: "var(--color-brand)" }}><Loader2 size={16} className="animate-spin" /></span>
           )}
         </div>
 
@@ -317,17 +325,16 @@ export default function LocationMapPicker({
       </div>
 
       {/* ─── Interactive Mapbox Canvas ─────────────────────────────── */}
-      <div className="relative w-full h-[260px] rounded-xl overflow-hidden border border-border shadow-inner bg-card">
-        <div ref={mapContainerRef} className="w-full h-full" />
+      <div style={{ position: "relative", width: "100%", height: 260, borderRadius: 12, overflow: "hidden", border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+        <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
 
         {/* Floating Quick Action Overlay */}
         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
           {/* Live Pinned Badge */}
-          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card/90 backdrop-blur-md border border-border/80 text-[11px] text-foreground font-mono shadow-md">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>
-              {lat?.toFixed(4)}° N, {lng?.toFixed(4)}° E
-            </span>
+          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold shadow-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>HQ Pinned</span>
+            <Check size={12} className="text-emerald-500" />
           </div>
 
           {/* Detect GPS Button */}
@@ -356,54 +363,71 @@ export default function LocationMapPicker({
       {/* Pinned Address Preview */}
       {selectedPlaceName && (
         <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 flex items-center gap-2 text-xs text-primary font-medium">
-          <Building className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">{selectedPlaceName}</span>
         </div>
       )}
 
-      {/* ─── Collapsible Manual Coordinates Drawer ─────────────────── */}
-      <div className="pt-1">
+      {/* ─── Styled Manual Coordinates — Professional (plain CSS) ─ */}
+      <div style={{ paddingTop: 8 }}>
         <button
           type="button"
           onClick={() => setShowManualInputs(!showManualInputs)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium select-none"
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "3px 14px", borderRadius: 9999, background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", cursor: "pointer" }}
         >
-          <Compass className="w-3.5 h-3.5 text-primary" />
-          <span>{showManualInputs ? "Hide decimal coordinates" : "Manual Lat / Lng override"}</span>
-          {showManualInputs ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+          <span>{showManualInputs ? "Hide precise decimals" : "Fine-tune precise decimals"}</span>
+          {showManualInputs ? <ChevronUp size={12} style={{ opacity: 0.7 }} /> : <ChevronDown size={12} style={{ opacity: 0.7 }} />}
         </button>
 
         {showManualInputs && (
-          <div className="grid grid-cols-2 gap-3 mt-2 p-3 rounded-xl bg-background/50 border border-border animate-in fade-in-50">
-            <div>
-              <Label htmlFor="manual-lat" className="text-[11px] text-muted-foreground">
-                Exact Latitude
-              </Label>
-              <Input
-                id="manual-lat"
-                type="number"
-                step="any"
-                value={lat || ""}
-                onChange={(e) => onLocationChange(Number(e.target.value), lng)}
-                className="h-8 mt-1 text-xs font-mono bg-background/80"
-              />
+          <div style={{ marginTop: 10, borderRadius: 16, border: "1px solid var(--color-border)", background: "var(--color-surface)", overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-sunken)" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--color-brand)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+                <Compass size={13} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-primary)" }}>Precise Coordinates</div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="manual-lng" className="text-[11px] text-muted-foreground">
-                Exact Longitude
-              </Label>
-              <Input
-                id="manual-lng"
-                type="number"
-                step="any"
-                value={lng || ""}
-                onChange={(e) => onLocationChange(lat, Number(e.target.value))}
-                className="h-8 mt-1 text-xs font-mono bg-background/80"
-              />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: 12 }}>
+              <div>
+                <Label htmlFor="manual-lat" style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-inverse)", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 3, height: 12, borderRadius: 9999, background: "#ffffff", display: "inline-block" }} /> Latitude
+                </Label>
+                <div style={{ position: "relative" }}>
+                  <Input
+                    id="manual-lat"
+                    type="number"
+                    step="any"
+                    value={lat ?? ""}
+                    onChange={(e) => onLocationChange(Number(e.target.value), lng)}
+                    placeholder="lattitude"
+                    style={{ height: 40, paddingRight: 28, fontSize: 13, fontFamily: "var(--font-mono)", fontWeight: 600,paddingLeft: 12 }}
+                  />
+                  <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, fontWeight: 800, color: "#ffffff" }}>°N</span>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="manual-lng" style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-inverse)", display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 3, height: 12, borderRadius: 9999, background: "#ffffff", display: "inline-block" }} /> Longitude
+                </Label>
+                <div style={{ position: "relative" }}>
+                  <Input
+                    id="manual-lng"
+                    type="number"
+                    step="any"
+                    value={lng ?? ""}
+                    onChange={(e) => onLocationChange(lat, Number(e.target.value))}
+                    placeholder="longitude"
+                    style={{ height: 40, paddingRight: 28,paddingLeft: 12, fontSize: 13, fontFamily: "var(--font-mono)", fontWeight: 600 }}
+                  />
+                  <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, fontWeight: 800, color: "var(--color-text-inverse)" }}>°E</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
+
     </div>
   );
 }
