@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-// Hoisted — prevents FOUC on route navigation (field + operations chunks were lazy-loaded per page)
+// Hoisted — all route CSS in initial bundle so landing/field/operations paint instantly, no FOUC
 import "@/styles/field.css"
+import "@/styles/landing.css"
+import "@/styles/login.css"
+import "@/styles/register.css"
 import "@/styles/operations/base.css"
 import "@/styles/operations/cases.css"
 import "@/styles/operations/command-center.css"
