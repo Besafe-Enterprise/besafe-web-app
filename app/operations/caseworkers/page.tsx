@@ -95,7 +95,7 @@ export default function CaseworkersPage() {
               <Link key={t.id} href={`/operations/caseworkers/${t.id}`} style={{ textDecoration: "none" }}>
                 <div className="worker-card">
                   <div className="worker-card__head">
-                    <Avatar name={t.name} size="lg" />
+                    <Avatar name={t.name} src={(t as any).avatar_url} size="lg" />
                     <div className="worker-card__info">
                       <div className="worker-card__name">{t.name}</div>
                       <div className="worker-card__role">{t.role}</div>

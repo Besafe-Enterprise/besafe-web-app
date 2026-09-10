@@ -83,13 +83,13 @@ export default function FieldAssignmentsPage() {
       <p className="field-list__subtitle">Active cases &amp; reports — tap to open, capture evidence, and file reports.</p>
 
       {pendingCount > 0 && (
-        <Link href="/field/assignments" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "var(--color-surface)", border: "1px solid var(--color-warning, #F59E0B)", marginBottom: 12, textDecoration: "none" }}>
+        <Link href="/field/assignments" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "var(--color-surface)", border: "1px solid var(--color-border)", marginBottom: 12, textDecoration: "none" }}>
           <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}><Briefcase width={14} height={14} /> Awaiting your acceptance</span>
-          <span style={{ fontSize: 12, color: "var(--color-warning, #F59E0B)", fontWeight: 600 }}>{pendingCount}</span>
+          <span style={{ fontSize: 12, color: "var(--color-background, #ffffff)", fontWeight: 600 }}>{pendingCount}</span>
         </Link>
       )}
 
-      <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>``
         {(["all", "cases", "reports"] as const).map((t) => (
           <button
             key={t}
@@ -133,9 +133,10 @@ export default function FieldAssignmentsPage() {
             {item.kind === "case" ? (
               <>
                 <WorkerCaseCard alert={item.data} href={`/field/cases/${item.id}`} />
+
                 <div className="field-assignment__hint">
                   {workerStageFor(item.data) === "new" ? (
-                    <span className="field-assignment__hint--new">
+                    <span className="field-assignment__hint--new" style={{color:"red"}}>
                       <Check width={14} height={14} /> Awaiting your acceptance
                     </span>
                   ) : (

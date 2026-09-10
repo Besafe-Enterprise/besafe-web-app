@@ -15,6 +15,11 @@ export const apiClient = axios.create({
 // Request interceptor to attach JWT Token from cookies or localStorage
 apiClient.interceptors.request.use(
   (config) => {
+    // Let browser set multipart boundary for FormData — don't send application/json
+    if (config.data instanceof FormData && config.headers) {
+      delete (config.headers as Record<string, unknown>)["Content-Type"]
+      delete (config.headers as Record<string, unknown>)["content-type"]
+    }
     if (typeof window !== "undefined") {
       const cookies = parseCookies()
       const token =

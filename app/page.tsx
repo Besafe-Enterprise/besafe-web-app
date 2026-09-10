@@ -22,17 +22,14 @@ import "@/styles/landing.css";
 export default function LandingPage() {
   const [activePerspective, setActivePerspective] = useState<"citizens" | "agencies">("citizens");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage.getItem("landing-theme");
-      return stored === "light" ? "light" : "dark";
-    }
-    return "dark";
-  });
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const stored = localStorage.getItem("landing-theme") as "dark" | "light" | null;
     const initial = stored === "light" ? "light" : "dark";
+    setTheme(initial);
     document.documentElement.setAttribute("data-theme", initial);
   }, []);
 
@@ -87,8 +84,8 @@ export default function LandingPage() {
           </nav>
 
           <div className="landing-nav-actions">
-            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" suppressHydrationWarning>
+              {!mounted ? <Sun size={16} /> : theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <Link href="/login?role=admin" className="landing-btn landing-btn--ghost landing-btn--sm">
               Sign In
@@ -103,15 +100,16 @@ export default function LandingPage() {
       {/* ─── Hero ─────────────────────────────────────── */}
       <section className="landing-hero">
         <div className="landing-hero-inner">
-          {/* <div className="landing-hero-badge">
-            <span className="landing-hero-badge-dot" />
-            Real-time Safety and Response
-          </div> */}
+          <div className="landing-hero-trust">
+            <span className="landing-hero-trust__pill"><ShieldCheck size={14} /> Verified Agencies Only</span>
+            <span className="landing-hero-trust__pill"><Shield size={14} /> End-to-End Encrypted</span>
+            <span className="landing-hero-trust__pill"><Building2 size={14} /> NGO & Police Network</span>
+          </div>
 
-          <h1 >Stay Safe. Get Help Instantly.</h1>
+          <h1>Stay Safe. Get Help Instantly.</h1>
 
           <p>
-            BeSafe connects you to the nearest emergency agency with one tap, voice-triggered alerts, safety check-ins, and secure reporting — all from your phone.
+            BeSafe connects you to the <b>nearest verified</b> emergency agency with one tap, voice-triggered alerts, safety check-ins, and <b>private</b> reporting — all from your phone.
           </p>
 
           <div className="landing-hero-actions">
@@ -128,6 +126,12 @@ export default function LandingPage() {
               <HardHat size={18} />
               Field Worker
             </Link>
+          </div>
+
+          <div className="landing-trust-bar">
+            <div className="landing-trust-bar__item"><ShieldCheck size={16} /> <b>100%</b> Verified Agencies</div>
+            <div className="landing-trust-bar__item"><Shield size={16} /> <b>AES-256</b> Encrypted Vault</div>
+            <div className="landing-trust-bar__item"><Building2 size={16} /> <b>24/7</b> Command Center</div>
           </div>
         </div>
       </section>
@@ -280,6 +284,46 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Trust & Safety ─────────────────────────────── */}
+      <section className="landing-security">
+        <div className="landing-section-inner">
+          <div className="landing-section-header">
+            <p className="landing-section-label">Trust & Safety</p>
+            <h2 className="landing-section-title">Verified. Encrypted. Yours.</h2>
+            <p className="landing-section-desc">BeSafe was built with law-enforcement and NGOs — not as a social app. Every agency is verified, every report is encrypted, and you stay in control.</p>
+          </div>
+          <div className="landing-security-grid">
+            <div className="landing-security-card">
+              <div className="landing-security-card-icon"><ShieldCheck size={18} /></div>
+              <h4>Verified Agencies Only</h4>
+              <p>Every police unit, response NGO and support center is manually verified against official records. No anonymous responders.</p>
+              <ul>
+                <li><ShieldCheck size={12} /> Government ID + HQ location verified</li>
+                <li><ShieldCheck size={12} /> Revocable access — agency can be suspended instantly</li>
+              </ul>
+            </div>
+            <div className="landing-security-card">
+              <div className="landing-security-card-icon" style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6" }}><Shield size={18} /></div>
+              <h4>End-to-End Encrypted Vault</h4>
+              <p>Voice cues, locations and evidence are AES-256 encrypted at rest and TLS in transit. Even BeSafe cannot read your private vault.</p>
+              <ul>
+                <li><ShieldCheck size={12} /> Store reports locally — submit only when you choose</li>
+                <li><ShieldCheck size={12} /> Auto-redacted exports for court-ready PDFs</li>
+              </ul>
+            </div>
+            <div className="landing-security-card">
+              <div className="landing-security-card-icon" style={{ background: "rgba(139,92,246,0.12)", color: "#8B5CF6" }}><Building2 size={18} /></div>
+              <h4>You Control Your Data</h4>
+              <p>Share a report with one agency, a support NGO, or keep it private forever. Revoke access anytime from your phone.</p>
+              <ul>
+                <li><ShieldCheck size={12} /> One-tap revoke + 7-day presigned evidence links</li>
+                <li><ShieldCheck size={12} /> No ads, no selling, no tracking</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Download ─────────────────────────────────── */}
       <section id="download" className="landing-download">
         <div className="landing-section-inner">
@@ -384,7 +428,7 @@ export default function LandingPage() {
           </div>
         </div>
         <p className="landing-footer-copy" style={{ textAlign: "center", maxWidth: 1200, margin: "var(--space-4) auto 0", padding: "0 var(--space-5)" }}>
-          &copy; 2025 BeSafe. All rights reserved.
+          &copy; 2026 BeSafe. All rights reserved.
         </p>
       </footer>
     </div>

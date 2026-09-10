@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
-import { useFieldNotifications, useMarkFieldNotificationsRead } from "@/lib/field/use-field-data";
+import { useFieldNotifications, useMarkFieldNotificationsRead, useFieldProfile } from "@/lib/field/use-field-data";
 import { Shield, Home, Briefcase, Map as MapIcon, Bell, CheckCheck, Settings } from "lucide-react";
 import "@/styles/field.css";
 
@@ -34,6 +34,7 @@ export default function FieldShell({
   const router = useRouter();
   const { user } = useAgencyAuthStore();
   const { data: notifData } = useFieldNotifications();
+  const { data: profile } = useFieldProfile();
   const markRead = useMarkFieldNotificationsRead();
   const unread = notifData?.unread ?? 0;
   const notifications = notifData?.notifications ?? [];
@@ -155,8 +156,8 @@ export default function FieldShell({
             </div>
           )}
         </div>
-        <Link href="/field/profile" className="field-topbar__avatar" title={displayName} aria-label="Profile">
-          {initials}
+        <Link href="/field/profile" className="field-topbar__avatar" title={displayName} aria-label="Profile" style={profile?.avatar_url ? { backgroundImage: `url("${profile.avatar_url}")`, backgroundSize: "cover", backgroundPosition: "center", color: "transparent" } : undefined}>
+          {profile?.avatar_url ? "" : initials}
         </Link>
       </header>
 

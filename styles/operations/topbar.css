@@ -247,7 +247,17 @@
   height: 7px;
   border-radius: 50%;
   background: var(--color-critical);
-  box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+.operations-bell__item:not(.operations-bell__item--unread) {
+  opacity: 0.82;
+}
+.operations-bell__item:not(.operations-bell__item--unread) .operations-bell__item-title {
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+.operations-bell__item:not(.operations-bell__item--unread) .operations-bell__item-body {
+  color: var(--color-text-tertiary);
 }
 .operations-bell__item-title {
   font-size: var(--text-sm);

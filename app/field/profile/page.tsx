@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
 import { useAgencyLogout } from "@/lib/hooks/auth/use-agency-auth";
-import { useFieldProfile, useFieldActiveAlerts, useFieldNotifications } from "@/lib/field/use-field-data";
+import { useFieldProfile, useFieldWorkerAlerts, useFieldReports, useFieldNotifications } from "@/lib/field/use-field-data";
 import { User, Shield, Briefcase, CheckCircle, LogOut, Edit2, Moon, Sun, Bell } from "lucide-react";
+import { ACTIVE_CASE_STATUSES } from "@/types";
 import "@/styles/field.css";
 
 function getInitialFieldTheme(): "dark" | "light" {
@@ -20,7 +21,8 @@ export default function FieldProfilePage() {
   const { data: profile } = useFieldProfile();
   const { data: notificationsData } = useFieldNotifications();
   const unreadCount = notificationsData?.unread ?? 0;
-  const { alerts: liveAlerts } = useFieldActiveAlerts();
+  const { alerts: allAlerts } = useFieldWorkerAlerts();
+  const { data: reports = [] } = useFieldReports();
 
   const [theme, setTheme] = useState<"dark" | "light">(getInitialFieldTheme);
   const [onDuty, setOnDuty] = useState(true);
@@ -37,8 +39,13 @@ export default function FieldProfilePage() {
     document.documentElement.setAttribute("data-field-theme", next);
   };
 
-  const assignedCount = liveAlerts.filter((a) => String(a.assigned_staff_id) === String(user?.id)).length;
-  const resolvedCount = liveAlerts.filter((a) => a.status === "resolved" && String(a.assigned_staff_id) === String(user?.id)).length;
+  const myActiveAlerts = allAlerts.filter((a) => (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status));
+  const myActiveReports = (reports as unknown as { status?: string; assigned_staff_id?: string | null }[]).filter((r) => r.status !== "resolved" && r.status !== "closed" && String(r.assigned_staff_id) === String(user?.id));
+  // Resolved includes both cases and reports that are terminal
+  const myResolvedAlerts = allAlerts.filter((a) => a.status === "resolved" || a.status === "closed" || a.status === "false_alarm");
+  const myResolvedReports = (reports as unknown as { status?: string; assigned_staff_id?: string | null }[]).filter((r) => r.status === "resolved" || r.status === "closed");
+  const assignedCount = myActiveAlerts.length + myActiveReports.length;
+  const resolvedCount = myResolvedAlerts.length + myResolvedReports.length;
 
   const initials = (user?.name || "W")
     .split(" ")

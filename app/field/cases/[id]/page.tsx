@@ -93,11 +93,12 @@ export default function FieldCaseDetailPage() {
       setEvidencePreview(null);
     }
     if (uploadEvidence.isError && !prevUpload.current.isError) {
+      const msg = (uploadEvidence.error as { response?: { data?: { error?: string } } })?.response?.data?.error || (uploadEvidence.error as Error)?.message || "Upload failed";
       toast.dismiss("evidence-uploaded");
-      toast.error("Upload failed", { id: "evidence-failed" });
+      toast.error(msg, { id: "evidence-failed" });
     }
     prevUpload.current = { isSuccess: uploadEvidence.isSuccess, isError: uploadEvidence.isError };
-  }, [uploadEvidence.isSuccess, uploadEvidence.isError]);
+  }, [uploadEvidence.isSuccess, uploadEvidence.isError, uploadEvidence.error]);
 
   const prevAddReport = useRef({ isSuccess: false, isError: false });
   useEffect(() => {
@@ -501,6 +502,7 @@ export default function FieldCaseDetailPage() {
                 </div>
               )}
             </div>
+            
             <div className="field-evidence-preview__actions" style={{marginTop:20}}>
               <button className="field-primary-btn field-primary-btn--sm" onClick={handleUploadEvidence} disabled={uploadEvidence.isPending} style={{width:100}}> 
                 {uploadEvidence.isPending ? "Uploading..." : "Upload"}

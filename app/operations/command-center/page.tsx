@@ -400,7 +400,7 @@ export default function CommandCenterPage() {
                     className="cc-team__item"
                     style={{ textDecoration: "none" }}
                   >
-                    <Avatar name={t.name} size="sm" />
+                    <Avatar name={t.name} src={(t as any).avatar_url} size="sm" />
                     <div className="cc-team__info">
                       <div className="cc-team__name">{t.name}</div>
                       <div className="cc-team__detail">

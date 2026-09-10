@@ -94,13 +94,6 @@ export default function FieldHomePage() {
         </div>
       </div>
 
-      {pendingAlerts.length > 0 && (
-        <Link href="/field/assignments" className="field-home__pending" style={{ textDecoration: "none", marginTop: 12 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock width={14} height={14} /> Cases awaiting your acceptance</span>
-          <span className="field-home__pending-count">{pendingAlerts.length}</span>
-        </Link>
-      )}
-
       <div className="field-home__section-title">
         <span>{combined.length > 0 ? "Your work" : "Nothing assigned"}</span>
       </div>

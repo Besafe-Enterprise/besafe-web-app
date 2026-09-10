@@ -33,8 +33,8 @@ export default function FieldProfileEditPage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10MB");
       return;
     }
     const reader = new FileReader();
@@ -42,7 +42,10 @@ export default function FieldProfileEditPage() {
     reader.readAsDataURL(file);
     uploadAvatar.mutate(file, {
       onSuccess: () => toast.success("Avatar updated"),
-      onError: () => toast.error("Failed to upload avatar"),
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || (err as Error)?.message || "Failed to upload avatar";
+        toast.error(msg);
+      },
     });
   };
 

@@ -58,7 +58,7 @@ export default function ReportPdfPreviewPage() {
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <Link href={`/operations/reports/${id}`} className="text-tertiary" style={{ fontSize: "var(--text-sm)", display: "inline-flex", alignItems: "center", gap: 6 }}><ArrowLeft width={14} height={14} /> Back to report {reportShortId(id)}</Link>
-          <h1 className="page-header__title" style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}><FileText width={18} height={18} /> Report {reportShortId(id)} — PDF preview</h1>
+          <h1 className="page-header__title" style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}><FileText width={18} height={18} />{reportShortId(id)} — PDF preview</h1>
           <p className="page-header__subtitle">Server-built PDF — same scalable engine as case export.</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

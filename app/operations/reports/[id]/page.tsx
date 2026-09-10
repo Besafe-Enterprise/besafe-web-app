@@ -82,7 +82,7 @@ export default function ReportReviewPage() {
         <div>
           <Link href="/operations/reports" className="text-tertiary" style={{ fontSize: "var(--text-sm)" }}>← Back to reports</Link>
           <h1 className="page-header__title" style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            Report {reportShortId(report.id)}
+            {reportShortId(report.id)}
           </h1>
           <p className="page-header__subtitle" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Clock width={12} height={12} /> {formatShortDate(report.created_at || report.createdAt)} • {report.category || report.incident_type || "Report"}
@@ -206,7 +206,7 @@ export default function ReportReviewPage() {
             {report.assigned_staff_name ? (
               <>
                 <div className="worker-option" style={{ padding: 0, border: "none" }}>
-                  <Avatar name={report.assigned_staff_name} />
+                  <Avatar name={report.assigned_staff_name} src={(handler as any)?.avatar_url} />
                   <div className="worker-option__info">
                     <div className="worker-option__name" style={{ display: "flex", alignItems: "center", gap: 6 }}>{report.assigned_staff_name} <Badge variant={handler?.is_active ? "available" : "offline"} tone="worker">{handler ? (handler.is_active ? "ACTIVE" : "OFFLINE") : ""}</Badge></div>
                     <div className="worker-option__meta">{handler?.role || "FIELD_AGENT"} {handler?.email ? `• ${handler.email}` : ""}</div>
@@ -233,7 +233,7 @@ export default function ReportReviewPage() {
                   <div className="assign-panel">
                     {team.slice(0, 5).map((t) => (
                       <div key={t.id} className="worker-option">
-                        <Avatar name={t.name} size="sm" />
+                        <Avatar name={t.name} src={(t as any).avatar_url} size="sm" />
                         <div className="worker-option__info"><div className="worker-option__name">{t.name}</div><div className="worker-option__meta">{workerStatus(t) === "available" ? "AVAILABLE" : "OFFLINE"} • {t.role}</div></div>
                         <button type="button" className="btn btn--primary btn--sm" disabled={assigning || !t.is_active} onClick={() => handleAssign(String(t.id), t.name)}>Assign</button>
                       </div>
@@ -278,7 +278,7 @@ export default function ReportReviewPage() {
             <div className="assign-panel">
               {team.filter((t) => t.is_active).map((t) => (
                 <div key={t.id} className="worker-option">
-                  <Avatar name={t.name} size="sm" />
+                  <Avatar name={t.name} src={(t as any).avatar_url} size="sm" />
                   <div className="worker-option__info"><div className="worker-option__name">{t.name}</div><div className="worker-option__meta">{t.role} • {t.email}</div></div>
                   <button type="button" className="btn btn--primary btn--sm" onClick={() => handleAssign(String(t.id), t.name)}>Assign</button>
                 </div>

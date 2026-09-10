@@ -206,7 +206,7 @@ export default function AnalyticsPage() {
                   <tr key={t.id}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Avatar name={t.name} size="sm" />
+                        <Avatar name={t.name} src={(t as any).avatar_url} size="sm" />
                         <span>{t.name}</span>
                       </div>
                     </td>

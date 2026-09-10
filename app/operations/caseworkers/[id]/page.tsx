@@ -183,7 +183,7 @@ export default function CaseworkerDetailPage() {
         <div className="caseworker-overview-grid">
           <div className="card" style={{ minHeight: 240 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)", marginBottom: "var(--space-4)", minWidth: 0 }}>
-              <Avatar name={worker.name} size="lg" />
+              <Avatar name={worker.name} src={(worker as any).avatar_url} size="lg" />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, overflowWrap: "anywhere", wordBreak: "break-word" }}>{worker.name}</div>
                 <div className="text-tertiary" style={{ fontSize: "var(--text-sm)", overflowWrap: "anywhere" }}>{worker.role}</div>

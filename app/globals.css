@@ -192,3 +192,12 @@ button {
   font-family: inherit;
   cursor: pointer;
 }
+
+/* Emojis — white in dark, black in light */
+html.dark .emoji, [data-theme="dark"] .emoji { color: #fff; filter: brightness(0) invert(1); }
+html:not(.dark) .emoji, [data-theme="light"] .emoji { color: #000; filter: none; }
+
+/* ─── All React SVG icons — white in dark, black in light, minimal glow ─ */
+html.dark svg, [data-theme="dark"] svg, [data-field-theme="dark"] svg { color: #fff !important; stroke: #fff !important; }
+html:not(.dark) svg, [data-theme="light"] svg, [data-field-theme="light"] svg { color: #000 !important; stroke: #000 !important; }
+.btn, .landing-btn, .field-primary-btn, .field-secondary-btn, .avatar, .badge { box-shadow: none !important; }

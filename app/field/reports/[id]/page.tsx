@@ -365,9 +365,9 @@ export default function FieldReportDetailPage() {
             <div className="field-evidence-preview__media">
               {evidenceType === "photo" ? <img src={evidencePreview} alt="Preview" /> : evidenceType === "video" ? <video src={evidencePreview} controls /> : evidenceType === "audio" ? <audio src={evidencePreview} controls /> : <div className="field-evidence-doc"><File width={32} height={32} /><span>{evidenceFile.name}</span></div>}
             </div>
-            <div className="field-evidence-preview__actions">
-              <button className="field-primary-btn field-primary-btn--sm" onClick={handleUploadEvidence} disabled={uploadEvidence.isPending}>{uploadEvidence.isPending ? "Uploading…" : "Upload"}</button>
-              <button className="btn btn--ghost btn--sm" onClick={() => { setEvidenceFile(null); setEvidencePreview(null); }}><X width={14} height={14} /></button>
+            <div className="field-evidence-preview__actions" style={{ marginTop: 20 }}>
+              <button className="field-primary-btn field-primary-btn--sm" onClick={handleUploadEvidence} disabled={uploadEvidence.isPending} style={{ width: 100 }}>{uploadEvidence.isPending ? "Uploading…" : "Upload"}</button>
+              <button className="btn btn--ghost btn--sm" style={{ marginLeft: 8, width: 100 }} onClick={() => { setEvidenceFile(null); setEvidencePreview(null); }}><X width={14} height={14} /></button>
             </div>
           </div>
         )}

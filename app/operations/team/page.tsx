@@ -75,9 +75,9 @@ export default function TeamPage() {
 
       {/* Pending field-worker applications */}
       <div style={{ marginBottom: "var(--space-6)" }}>
-        <div className="page-section-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="page-section-title" style={{ display: "flex", alignItems: "center", gap: 8 ,marginBottom:12}}>
           <UserPlus width={16} height={16} />
-          <span>Field Worker Applications</span>
+          <span >Field Worker Applications</span>
           {applications.length > 0 && <Badge variant="active" tone="status">{applications.length}</Badge>}
         </div>
 
@@ -106,7 +106,7 @@ export default function TeamPage() {
                   <tr key={app.id}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Avatar name={app.name} size="sm" />
+                        <Avatar name={app.name} src={(app as any).avatar_url || (app as any).avatarUrl} size="sm" />
                         <div>
                           <div>{app.name}</div>
                           <div className="text-tertiary" style={{ fontSize: "var(--text-xs)" }}>{app.email}</div>
@@ -169,7 +169,7 @@ export default function TeamPage() {
                 <tr key={t.id}>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <Avatar name={t.name} size="sm" />
+                      <Avatar name={t.name} src={(t as any).avatar_url} size="sm" />
                       <div>
                         <div>{t.name}</div>
                         <div className="text-tertiary" style={{ fontSize: "var(--text-xs)" }}>{t.email}</div>
