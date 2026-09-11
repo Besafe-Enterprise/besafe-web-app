@@ -1,6 +1,19 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
+// Hoisted — all route CSS in initial bundle so landing/field/operations paint instantly, no FOUC
+import "@/styles/field.css"
+import "@/styles/landing.css"
+import "@/styles/login.css"
+import "@/styles/register.css"
+import "@/styles/operations/base.css"
+import "@/styles/operations/cases.css"
+import "@/styles/operations/command-center.css"
+import "@/styles/operations/layout.css"
+import "@/styles/operations/misc.css"
+import "@/styles/operations/sidebar.css"
+import "@/styles/operations/topbar.css"
+import "mapbox-gl/dist/mapbox-gl.css"
 import { QueryProvider } from "@/providers/QueryProvider"
 import { Toaster } from "sonner"
 import { PwaInstaller } from "@/components/pwa/pwa-installer"
@@ -63,13 +76,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="BeSafe" />
         <meta name="theme-color" content="#070B14" />
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground font-sans">
+      <body className="root-body">
         <QueryProvider>
           {children}
           <PwaInstaller />
           <Toaster
             position="top-right"
             richColors
+            duration={2000}
             toastOptions={{
               style: {
                 background: "#0F172A",

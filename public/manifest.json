@@ -1,13 +1,14 @@
 {
-  "name": "BeSafe Emergency Command & Incident Response",
-  "short_name": "BeSafe",
-  "description": "Tactical emergency response, real-time voice threat triage, and incident dispatch command portal.",
-  "start_url": "/",
-  "id": "/",
+  "name": "BeSafe Field — Mobile Response Console",
+  "short_name": "BeSafe Field",
+  "description": "Mobile-first response console for field workers. View assigned cases, update status, and navigate incidents on the go.",
+  "start_url": "/field",
+  "scope": "/field",
+  "id": "/field",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#070B14",
-  "theme_color": "#353FAB",
+  "orientation": "portrait",
+  "background_color": "#0F172A",
+  "theme_color": "#1B3A6B",
   "categories": ["safety", "utilities", "productivity"],
   "icons": [
     {
@@ -25,24 +26,24 @@
   ],
   "shortcuts": [
     {
-      "name": "Live Vector Radar",
-      "short_name": "Radar",
-      "description": "Open live tactical GPS incident radar",
-      "url": "/dashboard/map",
+      "name": "My Cases",
+      "short_name": "Cases",
+      "description": "Open your assigned cases",
+      "url": "/field",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
     },
     {
-      "name": "Emergency Alerts",
-      "short_name": "Alerts",
-      "description": "View incoming distress signals",
-      "url": "/dashboard/alerts",
+      "name": "Incident Map",
+      "short_name": "Map",
+      "description": "View your incidents on the map",
+      "url": "/field/map",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
     },
     {
-      "name": "SafeChat Reports",
-      "short_name": "SafeChat",
-      "description": "Citizen intelligence and qualitative reports",
-      "url": "/dashboard/reports",
+      "name": "My Profile",
+      "short_name": "Profile",
+      "description": "View your profile and case stats",
+      "url": "/field/profile",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
     }
   ]

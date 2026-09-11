@@ -22,22 +22,26 @@ export function useAgencyGetMe(options = {}) {
         setUser(profile)
         if (profile.agency) {
           setAgency(profile.agency)
-        } else if (profile.role === "AGENCY_ADMIN" || profile.role === "SUPER_ADMIN") {
+        } else if (profile.role === "AGENCY_ADMIN") {
           setAgency(profile)
         }
         return profile
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          clearAuth()
-          destroyCookie(null, "agencyAccessToken", { path: "/" })
-          destroyCookie(null, "agencyRefreshToken", { path: "/" })
+      } catch (error: unknown) {
+        if (error instanceof Error && "response" in error) {
+          const resp = (error as { response?: { status?: number } }).response;
+          if (resp?.status === 401) {
+            clearAuth()
+            destroyCookie(null, "agencyAccessToken", { path: "/" })
+            destroyCookie(null, "agencyRefreshToken", { path: "/" })
+          }
         }
         throw error
       }
     },
     staleTime: 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error: unknown) => {
+      const resp = (error as { response?: { status?: number } }).response;
+      if (resp?.status === 401) return false
       return failureCount < 2
     },
     refetchOnWindowFocus: false,
@@ -64,7 +68,7 @@ export function useAgencyLogin() {
         name: data.user?.name || data.agency?.name || "Operator",
         email: data.user?.email || data.agency?.email || "",
         phone_number: data.user?.phone_number || data.agency?.phone_number || "",
-        role: data.user?.role || data.agency?.role || "DISPATCHER",
+        role: data.user?.role || data.agency?.role || "AGENCY_ADMIN",
         agency_id: data.user?.agency_id || data.agency?.id,
         agency: data.agency,
       }
@@ -118,7 +122,7 @@ export function useChangeInitialPassword() {
   })
 }
 
-export function useAgencyLogout() {
+export function useAgencyLogout(redirectTo = "/login") {
   const clearAuth = useAgencyAuthStore((s) => s.clearAuth)
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -136,7 +140,7 @@ export function useAgencyLogout() {
         localStorage.removeItem("besafe_agency_profile")
       }
       queryClient.clear()
-      router.push("/login")
+      router.push(redirectTo)
     },
   })
 }

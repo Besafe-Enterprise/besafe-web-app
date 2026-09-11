@@ -5,7 +5,20 @@ import { agencySettingsApi } from "@/lib/api";
 import { useAgencyAuthStore } from "@/lib/store/agency-auth-store";
 import { toast } from "sonner";
 
-// 1. Update Agency Station Profile Details
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  const apiErr = err as ApiError;
+  return apiErr?.response?.data?.error || apiErr?.response?.data?.message || fallback;
+}
+
 export function useUpdateAgencyDetails() {
   const queryClient = useQueryClient();
   const agency = useAgencyAuthStore((s) => s.agency);
@@ -35,15 +48,14 @@ export function useUpdateAgencyDetails() {
         }
       }
       queryClient.invalidateQueries({ queryKey: ["agency", "me"] });
-      toast.success("Station identity updated successfully");
+      toast.success("Agency profile updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update station details");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update agency profile"));
     },
   });
 }
 
-// 2. Update Agency Station Location
 export function useUpdateAgencyLocation() {
   const queryClient = useQueryClient();
   const agency = useAgencyAuthStore((s) => s.agency);
@@ -59,13 +71,7 @@ export function useUpdateAgencyLocation() {
           ...agency,
           latitude: variables.lat,
           longitude: variables.lng,
-          location: {
-            lat: variables.lat,
-            lng: variables.lng,
-            latitude: variables.lat,
-            longitude: variables.lng,
-            address: agency.location?.address || `${variables.lat.toFixed(4)}°, ${variables.lng.toFixed(4)}°`,
-          },
+          location: { lat: variables.lat, lng: variables.lng, latitude: variables.lat, longitude: variables.lng },
         };
         setAgency(updated);
         if (typeof window !== "undefined") {
@@ -73,28 +79,24 @@ export function useUpdateAgencyLocation() {
         }
       }
       queryClient.invalidateQueries({ queryKey: ["agency", "me"] });
-      toast.success("Headquarters geolocation pin saved");
+      toast.success("HQ location updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to save station location");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update location"));
     },
   });
 }
 
-// 3. Update Agency Station Password
 export function useUpdateAgencyPassword() {
   return useMutation({
-    mutationFn: async (passwords: {
-      current_password?: string;
-      new_password?: string;
-    }) => {
+    mutationFn: async (passwords: { current_password: string; new_password: string }) => {
       return await agencySettingsApi.updatePassword(passwords);
     },
     onSuccess: () => {
-      toast.success("Access passcode updated successfully");
+      toast.success("Password updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to update passcode");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to update password"));
     },
   });
 }

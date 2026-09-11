@@ -32,8 +32,8 @@ export const useAlertStore = create<AlertState>((set) => ({
       const updated = exists ? state.alerts.map((a) => (a.id === alert.id ? alert : a)) : [alert, ...state.alerts]
       return {
         alerts: updated,
-        latestEmergency: alert.priority === "high" || alert.status === "active" ? alert : state.latestEmergency,
-        isEmergencyModalOpen: alert.priority === "high" || alert.status === "active",
+        latestEmergency: alert.priority === "high" || alert.status === "new" ? alert : state.latestEmergency,
+        isEmergencyModalOpen: alert.priority === "high" || alert.status === "new",
       }
     }),
 

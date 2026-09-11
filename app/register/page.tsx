@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import dynamic from "next/dynamic";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Mail,
@@ -21,6 +22,10 @@ import {
   Compass,
   CheckCircle2,
   ShieldCheck,
+  HardHat,
+  User,
+  Search,
+  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,21 +37,31 @@ import {
   agencyRegisterSchema,
   step1Fields,
   step2Fields,
-  step3Fields,
   type AgencyRegisterFormData,
 } from "@/lib/validations/auth.schema";
+import { fieldWorkerApi, type AgencyOption } from "@/lib/api";
 import { toast } from "sonner";
 import type { ApiFieldError } from "@/types/auth";
+import "@/styles/register.css";
+import "@/styles/login.css";
 
-// Dynamic import for Mapbox Location Picker to bypass SSR
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+}
+
 const LocationMapPicker = dynamic(
   () => import("@/components/map/LocationMapPicker"),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[260px] rounded-xl flex items-center justify-center bg-card border border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+      <div className="register-map-loading">
+        <div className="register-map-loading-inner">
+          <Loader2 size={16} className="animate-spin" />
           <span>Loading Map Radar...</span>
         </div>
       </div>
@@ -54,9 +69,20 @@ const LocationMapPicker = dynamic(
   }
 );
 
+/* ════════════════════════════════════════════════════════════
+   AGENCY REGISTRATION WIZARD (existing flow)
+   ════════════════════════════════════════════════════════════ */
+
+function getPwdStrength(pw: string) {
+  if (!pw) return { label: "", score: 0, color: "" };
+  if (pw.length < 6) return { label: "Weak", score: 25, color: "var(--color-error)" };
+  if (pw.length < 10) return { label: "Medium", score: 60, color: "var(--color-warning)" };
+  return { label: "Strong", score: 100, color: "var(--color-success)" };
+}
+
 const STEPS = [
   { id: 1, title: "Identity", subtitle: "Agency Profile", icon: Building2 },
-  { id: 2, title: "Location", subtitle: "Station Map", icon: Compass },
+  { id: 2, title: "Location", subtitle: "Agency Map", icon: Compass },
   { id: 3, title: "Security", subtitle: "Credentials", icon: LockKeyhole },
 ];
 
@@ -85,8 +111,8 @@ function AgencyRegisterWizard() {
       name: "",
       region: "",
       phone_number: "",
-      lat: 15.5007,
-      lng: 32.5599,
+      lat:  9.585,
+      lng: 6.546,
       email: "",
       password: "",
     },
@@ -94,7 +120,6 @@ function AgencyRegisterWizard() {
 
   const formValues = watch();
 
-  // Validate only the current step before advancing
   const handleNextStep = async () => {
     let isValid = false;
 
@@ -125,7 +150,7 @@ function AgencyRegisterWizard() {
           { email: data.email, password: data.password },
           {
             onSuccess: () => {
-              router.push("/dashboard");
+              router.push("/operations/command-center");
             },
             onError: () => {
               router.push("/login?registered=true");
@@ -133,10 +158,11 @@ function AgencyRegisterWizard() {
           }
         );
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
+        const apiErr = err as ApiError;
         const message =
-          err?.response?.data?.error ||
-          err?.response?.data?.message ||
+          apiErr?.response?.data?.error ||
+          apiErr?.response?.data?.message ||
           "Registration failed. Please check your information.";
         const lower = message.toLowerCase();
 
@@ -158,380 +184,831 @@ function AgencyRegisterWizard() {
   const isSubmitting = isRegistering || isLoggingIn;
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Background Tactical Glows */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background" />
-      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
-
-      <div className="relative z-10 w-full max-w-xl space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-xl shadow-blue-500/20 ring-1 ring-white/20">
-            <ShieldAlert className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Agency Onboarding Wizard
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Configure your emergency response station in 3 quick steps
-            </p>
-          </div>
+    <>
+      <div className="register-brand">
+        <div className="register-brand-icon">
+          <ShieldAlert size={28} />
         </div>
+        <h1>Agency Onboarding</h1>
+        <p>Configure your emergency response agency in 3 quick steps</p>
+      </div>
 
-        {/* ─── 3-Step Interactive Stepper Bar ────────────────────────────── */}
-        <div className="flex items-center justify-between px-3 sm:px-6">
-          {STEPS.map((step, idx) => {
-            const Icon = step.icon;
-            const isCompleted = currentStep > step.id;
-            const isCurrent = currentStep === step.id;
+      {/* Stepper Bar */}
+      <div className="register-stepper">
+        {STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isCompleted = currentStep > step.id;
+          const isCurrent = currentStep === step.id;
 
-            return (
-              <div key={step.id} className="flex items-center flex-1 last:flex-none">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 ${
-                      isCompleted
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                        : isCurrent
-                        ? "bg-primary/20 text-primary border border-primary ring-2 ring-primary/30"
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <Icon className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="hidden sm:block text-left">
-                    <div
-                      className={`text-xs font-semibold ${
-                        isCurrent ? "text-foreground" : "text-muted-foreground"
-                      }`}
-                    >
-                      {step.title}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground/70">
-                      {step.subtitle}
-                    </div>
-                  </div>
+          return (
+            <div key={step.id} className={`register-stepper-step ${isCompleted ? "register-stepper-step--completed" : isCurrent ? "register-stepper-step--current" : "register-stepper-step--todo"}`}>
+              <div className="register-stepper-group">
+                <div className="register-stepper-icon">
+                  {isCompleted ? <CheckCircle2 size={16} /> : <Icon size={16} />}
+                </div>
+                <div className="register-stepper-label">
+                  <span className="register-stepper-label-title">{step.title}</span>
+                  <span className="register-stepper-label-sub">{step.subtitle}</span>
+                </div>
+              </div>
+
+              {idx < STEPS.length - 1 && (
+                <div className={`register-stepper-line ${currentStep > step.id ? "register-stepper-line--done" : ""}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Wizard Content Card */}
+      <Card className="register-card">
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="register-form">
+            {/* STEP 1: AGENCY IDENTITY */}
+            {currentStep === 1 && (
+              <div className="register-form-inner">
+                <div className="register-section-title">
+                  <h2>
+                    <Building2 size={16} />
+                    Agency Identity &amp; Operational Region
+                  </h2>
+                  <p>Enter official department identity and primary dispatch phone number</p>
                 </div>
 
-                {/* Connector line between steps */}
-                {idx < STEPS.length - 1 && (
-                  <div
-                    className={`h-[2px] mx-3 flex-1 transition-colors duration-300 ${
-                      currentStep > step.id ? "bg-primary" : "bg-border"
-                    }`}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ─── Wizard Content Card ───────────────────────────────────────── */}
-        <Card className="border border-border/80 bg-card/90 shadow-2xl backdrop-blur-xl">
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* ═════════ STEP 1: AGENCY IDENTITY ═════════ */}
-              {currentStep === 1 && (
-                <div className="space-y-4 animate-in fade-in-50 duration-200">
-                  <div className="pb-2 border-b border-border/50">
-                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-primary" />
-                      Agency Identity & Operational Region
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Enter official department identity and primary dispatch phone number
-                    </p>
+                <div className="register-field">
+                  <Label htmlFor="name">Agency / Department Name</Label>
+                  <div className="input-wrapper">
+                    <Building2 size={16} className="input-icon" />
+                    <Input
+                      id="name"
+                      placeholder="e.g. Minna Police Department"
+                      className={errors.name ? "error" : ""}
+                      style={{ paddingLeft: 40 }}
+                      {...register("name")}
+                    />
                   </div>
+                  {errors.name && (
+                    <p className="field-error">{errors.name.message}</p>
+                  )}
+                </div>
 
-                  {/* Agency Name */}
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Agency / Department Name</Label>
-                    <div className="relative">
-                      <Building2 className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="register-field-grid">
+                  <div className="register-field">
+                    <Label htmlFor="region">Region / City</Label>
+                    <div className="input-wrapper">
+                      <MapPin size={16} className="input-icon" />
                       <Input
-                        id="name"
-                        placeholder="e.g. Metropolitan Police Division 4"
-                        className="pl-10 text-foreground bg-background/50 border-input focus-visible:ring-primary/60"
-                        {...register("name")}
+                        id="region"
+                        placeholder="e.g. Lagos, London, or Khartoum North"
+                        className={errors.region ? "error" : ""}
+                        style={{ paddingLeft: 40 }}
+                        {...register("region")}
                       />
                     </div>
-                    {errors.name && (
-                      <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                        {errors.name.message}
-                      </p>
+                    {errors.region && (
+                      <p className="field-error">{errors.region.message}</p>
                     )}
                   </div>
 
-                  {/* Region & Phone Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="region">Region / City</Label>
-                      <div className="relative">
-                        <MapPin className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="region"
-                          placeholder="e.g. Lagos, London, or Khartoum North"
-                          className="pl-10 text-foreground bg-background/50 border-input focus-visible:ring-primary/60"
-                          {...register("region")}
-                        />
-                      </div>
-                      {errors.region && (
-                        <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                          {errors.region.message}
-                        </p>
-                      )}
+                  <div className="register-field">
+                    <Label htmlFor="phone_number">Agency Contact Phone</Label>
+                    <div className="input-wrapper">
+                      <Phone size={16} className="input-icon" />
+                      <Input
+                        id="phone_number"
+                        placeholder="+234 000 000 0000"
+                        className={errors.phone_number ? "error" : ""}
+                        style={{ paddingLeft: 40 }}
+                        {...register("phone_number")}
+                      />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone_number">Dispatch Contact Phone</Label>
-                      <div className="relative">
-                        <Phone className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="phone_number"
-                          placeholder="+1 (800) 555-0199"
-                          className="pl-10 text-foreground bg-background/50 border-input focus-visible:ring-primary/60"
-                          {...register("phone_number")}
-                        />
-                      </div>
-                      {errors.phone_number && (
-                        <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                          {errors.phone_number.message}
-                        </p>
-                      )}
-                    </div>
+                    {errors.phone_number && (
+                      <p className="field-error">{errors.phone_number.message}</p>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* ═════════ STEP 2: STATION LOCATION (SEARCH & MAP) ═════════ */}
-              {currentStep === 2 && (
-                <div className="space-y-4 animate-in fade-in-50 duration-200">
-                  <div className="pb-2 border-b border-border/50">
-                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-primary" />
-                      Station Headquarters Location
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Search your station address or drag the pin on the map to set your response base
-                    </p>
+            {/* STEP 2: AGENCY LOCATION */}
+            {currentStep === 2 && (
+              <div className="register-form-inner">
+                <div className="register-section-title">
+                  <h2>
+                    <Compass size={16} />
+                    Agency Headquarters Location
+                  </h2>
+                  <p>Search your agency address or drag the pin on the map to set your response base</p>
+                </div>
+
+                <LocationMapPicker
+                  lat={formValues.lat}
+                  lng={formValues.lng}
+                  onLocationChange={(newLat, newLng, placeName) => {
+                    setValue("lat", newLat, { shouldValidate: true });
+                    setValue("lng", newLng, { shouldValidate: true });
+                    if (placeName) setStationPlaceLabel(placeName);
+                  }}
+                />
+
+                {(errors.lat || errors.lng) && (
+                  <p className="field-error">
+                    {errors.lat?.message || errors.lng?.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* STEP 3: ACCESS CREDENTIALS */}
+            {currentStep === 3 && (
+              <div className="register-form-inner">
+                <div className="register-section-title">
+                  <h2>
+                    <LockKeyhole size={16} />
+                    Access &amp; Security Credentials
+                  </h2>
+                  <p>Set up your master dispatch login and review agency details</p>
+                </div>
+
+                {/* Summary Review */}
+                <div className="register-summary">
+                  <div className="register-summary-row">
+                    <span className="summary-label">Agency:</span>
+                    <span className="summary-value">{formValues.name || "—"}</span>
                   </div>
+                  <div className="register-summary-row">
+                    <span className="summary-label">Region / City:</span>
+                    <span className="summary-value">{formValues.region || "—"}</span>
+                  </div>
+                  {stationPlaceLabel && (
+                    <div className="register-summary-row">
+                      <span className="summary-label">Agency Address:</span>
+                      <span className="summary-value summary-value--muted">{stationPlaceLabel}</span>
+                    </div>
+                  )}
+                  <div className="register-summary-row register-summary-row--location">
+                    <span className="summary-label">Agency Coordinates:</span>
+                    <span className="summary-value summary-value--pill"><MapPin size={12} /> {stationPlaceLabel ? stationPlaceLabel.split(",").slice(0,2).join(",") : "Pinned on map"}</span>
+                  </div>
+                </div>
 
-                  {/* Interactive Mapbox Location Picker */}
-                  <LocationMapPicker
-                    lat={formValues.lat}
-                    lng={formValues.lng}
-                    onLocationChange={(newLat, newLng, placeName) => {
-                      setValue("lat", newLat, { shouldValidate: true });
-                      setValue("lng", newLng, { shouldValidate: true });
-                      if (placeName) setStationPlaceLabel(placeName);
-                    }}
-                  />
-
-                  {/* Errors if any */}
-                  {(errors.lat || errors.lng) && (
-                    <p className="flex items-center gap-1.5 text-xs text-destructive font-medium">
-                      <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                      {errors.lat?.message || errors.lng?.message}
+                {/* Email */}
+                <div className="register-field">
+                  <Label htmlFor="email">Official Admin Email</Label>
+                  <div className="input-wrapper">
+                    <Mail size={16} className="input-icon" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="agency@police.gov"
+                      className={`${errors.email || apiError?.field === "email" ? "error" : ""}`}
+                      style={{ paddingLeft: 40 }}
+                      {...register("email")}
+                    />
+                  </div>
+                  {(errors.email || apiError?.field === "email") && (
+                    <p className="field-error">
+                      {errors.email?.message || apiError?.message}
                     </p>
                   )}
-
-                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-start gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                    <span>
-                      BeSafe's geospatial proximity engine automatically routes distress alerts within your station's operational radius.
-                    </span>
-                  </div>
                 </div>
-              )}
 
-              {/* ═════════ STEP 3: ACCESS CREDENTIALS ═════════ */}
-              {currentStep === 3 && (
-                <div className="space-y-4 animate-in fade-in-50 duration-200">
-                  <div className="pb-2 border-b border-border/50">
-                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <LockKeyhole className="w-4 h-4 text-primary" />
-                      Access & Security Credentials
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Set up your master dispatch login and review agency details
-                    </p>
+                {/* Password */}
+                <div className="register-field">
+                  <Label htmlFor="password">Master Access Password</Label>
+                  <div className="input-wrapper">
+                    <LockKeyhole size={16} className="input-icon" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••••••"
+                      className={`password-input ${errors.password ? "error" : ""}`}
+                      style={{ paddingLeft: 40, paddingRight: 40 }}
+                      {...register("password")}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
-
-                  {/* Summary Review Pill */}
-                  <div className="p-3.5 rounded-xl bg-background/50 border border-border space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Agency:</span>
-                      <span className="font-semibold text-foreground">{formValues.name || "—"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Region / City:</span>
-                      <span className="font-semibold text-foreground">{formValues.region || "—"}</span>
-                    </div>
-                    {stationPlaceLabel && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Station Address:</span>
-                        <span className="font-medium text-foreground truncate max-w-[220px]">{stationPlaceLabel}</span>
+                  {errors.password && (
+                    <p className="field-error">{errors.password.message}</p>
+                  )}
+                  {formValues.password && (
+                    <div className="login-strength" style={{ marginTop: 8 }}>
+                      <div className="login-strength-label">
+                        <span>Strength: </span>
+                        <span style={{ color: getPwdStrength(formValues.password).color }}>{getPwdStrength(formValues.password).label}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between font-mono text-[11px]">
-                      <span className="text-muted-foreground">Station Coordinates:</span>
-                      <span className="text-primary">{formValues.lat}° N, {formValues.lng}° E</span>
+                      <div className="login-strength-bar">
+                        <div className="login-strength-bar__fill" style={{ width: `${getPwdStrength(formValues.password).score}%`, background: getPwdStrength(formValues.password).color }} />
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Official Admin Email</Label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="dispatch@police.gov"
-                        className="pl-10 text-foreground bg-background/50 border-input focus-visible:ring-primary/60"
-                        {...register("email")}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                        {errors.email.message}
-                      </p>
-                    )}
-                    {apiError?.field === "email" && (
-                      <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                        {apiError.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Password */}
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Master Access Password</Label>
-                    <div className="relative">
-                      <LockKeyhole className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••••••"
-                        className="pr-10 pl-10 text-foreground bg-background/50 border-input focus-visible:ring-primary/60"
-                        {...register("password")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                        tabIndex={-1}
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                        {errors.password.message}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
-              )}
-
-              {/* Root Error Banner */}
-              {apiError?.field === "root" && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 backdrop-blur-sm animate-in fade-in-50">
-                  <p className="text-center text-xs font-medium text-destructive leading-relaxed">
-                    {apiError.message}
-                  </p>
-                </div>
-              )}
-
-              {/* ─── Wizard Action Buttons ──────────────────────────────── */}
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/60">
-                {currentStep > 1 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handlePrevStep}
-                    disabled={isSubmitting}
-                    className="h-10 px-4 text-xs font-semibold"
-                  >
-                    <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                    Back
-                  </Button>
-                ) : (
-                  <div />
-                )}
-
-                {currentStep < 3 ? (
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="h-10 px-5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
-                  >
-                    <span>Next Step</span>
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    className="h-10 px-6 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Registering Agency...
-                      </>
-                    ) : (
-                      <>
-                        <span>Complete Registration</span>
-                        <ArrowRight className="ml-1.5 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                )}
               </div>
-            </form>
+            )}
 
-            {/* Footer Navigation */}
-            <div className="text-center space-y-2 mt-4">
-              <p className="text-xs text-muted-foreground">
-                Already registered with the dispatch grid?{" "}
-                <Link
-                  href="/login"
-                  className="font-medium text-primary hover:underline hover:text-primary/90"
+            {/* Root Error Banner */}
+            {apiError?.field === "root" && (
+              <div className="register-error-box">
+                {apiError.message}
+              </div>
+            )}
+
+            {/* Wizard Action Buttons */}
+            <div className="register-actions">
+              {currentStep > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevStep}
+                  disabled={isSubmitting}
+                  className="register-btn register-btn--outline"
                 >
-                  Sign in to Command
-                </Link>
-              </p>
+                  <ArrowLeft size={14} />
+                  Back
+                </Button>
+              ) : (
+                <div />
+              )}
+
+              {currentStep < 3 ? (
+                <Button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="register-btn register-btn--primary"
+                >
+                  <span>Next Step</span>
+                  <ArrowRight size={14} />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="register-btn register-btn--primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Registering Agency...
+                    </>
+                  ) : (
+                    <>
+                      <span>Complete Registration</span>
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </form>
+        </CardContent>
+      </Card>
+    </>
   );
 }
 
-export default function AgencyRegisterPage() {
+/* ════════════════════════════════════════════════════════════
+   FIELD WORKER REGISTRATION (apply to an agency, pending approval)
+   ════════════════════════════════════════════════════════════ */
+
+interface FieldFormData {
+  name: string;
+  email: string;
+  phone_number: string;
+  password: string;
+  confirm: string;
+}
+
+const FW_STEPS = [
+  { id: 1, title: "Agency", subtitle: "Pick your response unit" },
+  { id: 2, title: "Details", subtitle: "Who you are" },
+  { id: 3, title: "Password", subtitle: "Secure your account" },
+];
+
+function fwStrength(pw: string) { return getPwdStrength(pw); }
+
+function FieldWorkerRegister() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [apiError, setApiError] = useState<ApiFieldError | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedAgency, setSelectedAgency] = useState<AgencyOption | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    data: agencies = [],
+    isLoading,
+    isError,
+  } = useQuery<AgencyOption[]>({
+    queryKey: ["agency", "options"],
+    queryFn: async () => await fieldWorkerApi.getAgencyOptions(),
+    staleTime: 60 * 1000,
+  });
+
+  const {
+    register,
+    watch,
+    trigger,
+    formState: { errors },
+  } = useForm<FieldFormData>({
+    defaultValues: { name: "", email: "", phone_number: "", password: "", confirm: "" },
+  });
+
+  const password = watch("password") || "";
+  const confirm = watch("confirm") || "";
+  const strength = fwStrength(password);
+
+  const filtered = agencies.filter((a) =>
+    `${a.name} ${a.region || ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleBack = () => {
+    setApiError(null);
+    if (step === 2) setStep(1);
+    else if (step === 3) setStep(2);
+  };
+
+  const handleNext = async () => {
+    setApiError(null);
+    if (step === 1) {
+      if (!selectedAgency) {
+        toast.error("Please select the agency you'd like to join.");
+        return;
+      }
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      const ok = await trigger(["name", "email", "phone_number"]);
+      if (ok) setStep(3);
+      return;
+    }
+    if (step === 3) {
+      const ok = await trigger(["password"]);
+      if (!ok) return;
+      if (!confirm) {
+        toast.error("Please confirm your password.");
+        return;
+      }
+      if (password !== confirm) {
+        setApiError({ field: "root", message: "Passwords do not match. Please enter them again." });
+        return;
+      }
+      await doSubmit();
+    }
+  };
+
+  const doSubmit = async () => {
+    if (!selectedAgency) return;
+    setApiError(null);
+    setIsSubmitting(true);
+    try {
+      await fieldWorkerApi.register({
+        name: watch("name"),
+        email: watch("email"),
+        phone_number: watch("phone_number"),
+        password,
+        agency_id: selectedAgency.id,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      const message =
+        apiErr?.response?.data?.error ||
+        apiErr?.response?.data?.message ||
+        "Failed to submit your application. Please try again.";
+      toast.error(message);
+      // setApiError({ field: "root", message });
+      setIsSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <Card className="register-card">
+        <CardContent>
+          <div className="register-success">
+            <div className="register-success-icon">
+              <CheckCircle2 size={32} />
+            </div>
+            <h2>Application submitted</h2>
+            <p>
+              Your field worker application for{" "}
+              <strong>{selectedAgency?.name || "the agency"}</strong> is now
+              pending approval.
+            </p>
+            <div className="register-success-steps">
+              <div className="register-success-step">
+                <span className="register-success-step__dot"><Check size={14} /></span>
+                <span>Your agency admin will review your application.</span>
+              </div>
+              <div className="register-success-step">
+                <span className="register-success-step__dot"><Check size={14} /></span>
+                <span>Once approved, you can sign in to the Field Worker app.</span>
+              </div>
+            </div>
+            <div className="register-success-actions">
+              <Link href="/login?role=field" className="register-btn register-btn--primary register-link-btn">
+                Go to Field Worker Login
+              </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className="register-brand">
+        <div className="register-brand-icon">
+          <HardHat size={28} />
+        </div>
+        <h1>Join as a Field Worker</h1>
+        <p>Apply to respond through a verified agency</p>
+      </div>
+
+      {/* Stepper */}
+      <div className="register-stepper">
+        {FW_STEPS.map((s) => {
+          const isCompleted = step > s.id;
+          const isCurrent = step === s.id;
+          return (
+            <div
+              key={s.id}
+              className={`register-stepper-step ${
+                isCompleted
+                  ? "register-stepper-step--completed"
+                  : isCurrent
+                  ? "register-stepper-step--current"
+                  : "register-stepper-step--todo"
+              }`}
+            >
+              <div className="register-stepper-group">
+                <div className="register-stepper-icon">
+                  {isCompleted ? <CheckCircle2 size={16} /> : <span>{s.id}</span>}
+                </div>
+                <div className="register-stepper-label">
+                  <span className="register-stepper-label-title">{s.title}</span>
+                  <span className="register-stepper-label-sub">{s.subtitle}</span>
+                </div>
+              </div>
+              {s.id < FW_STEPS.length && (
+                <div className={`register-stepper-line ${isCompleted ? "register-stepper-line--done" : ""}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <Card className="register-card">
+        <CardContent>
+          {apiError?.field === "root" && (
+            <div className="register-error-box">{apiError.message}</div>
+          )}
+
+          {/* STEP 1 — AGENCY */}
+          {step === 1 && (
+            <div className="register-form-inner">
+              <div className="register-section-title">
+                <h2>
+                  <Building2 size={16} /> Choose your response unit
+                </h2>
+                <p>Pick the verified agency you want to respond with</p>
+              </div>
+
+              {isLoading ? (
+                <div className="register-field-loading">
+                  <Loader2 size={16} className="animate-spin" /> Loading agencies...
+                </div>
+              ) : isError ? (
+                <div className="register-simple-hint">
+                  Couldn&apos;t load agencies. Check your connection and refresh.
+                </div>
+              ) : (
+                <>
+                  <div className="input-wrapper">
+                    <Search size={16} className="input-icon" />
+                    <Input
+                      placeholder="Search agency by name or region"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      style={{ paddingLeft: 40 }}
+                    />
+                  </div>
+                  <div className="register-agency-list">
+                    {filtered.length === 0 && (
+                      <div className="register-simple-hint">No agencies found.</div>
+                    )}
+                    {filtered.map((a) => {
+                      const active = selectedAgency?.id === a.id;
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          className={`register-agency-option ${active ? "register-agency-option--active" : ""}`}
+                          onClick={() => setSelectedAgency(a)}
+                        >
+                          <span className="register-agency-option-icon">
+                            <Building2 size={16} />
+                          </span>
+                          <span className="register-agency-option-meta">
+                            <strong>{a.name}</strong>
+                            <span>{a.region || "Region TBD"}</span>
+                            {a.phone_number && (
+                              <span className="register-agency-option-phone">
+                                <Phone size={12} /> {a.phone_number}
+                              </span>
+                            )}
+                          </span>
+                          {active ? (
+                            <CheckCircle2 size={18} className="register-agency-option-check" />
+                          ) : (
+                            <span className="register-agency-option-radio" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {!selectedAgency && (
+                    <p className="field-error">Select an agency to continue.</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* STEP 2 — DETAILS */}
+          {step === 2 && (
+            <div className="register-form-inner">
+              <div className="register-section-title">
+                <h2>
+                  <User size={16} /> Your details
+                </h2>
+                <p>How your agency and dispatch should reach you</p>
+              </div>
+
+              {selectedAgency && (
+                <div className="register-selected-agency">
+                  <Building2 size={16} />
+                  <span>
+                    Joining <strong>{selectedAgency.name}</strong>
+                  </span>
+                </div>
+              )}
+
+              <div className="register-simple-field">
+                <Label htmlFor="fname">Full Name</Label>
+                <div className="input-wrapper">
+                  <User size={16} className="input-icon" />
+                  <Input
+                    id="fname"
+                    placeholder="Your full name"
+                    className={errors.name ? "error" : ""}
+                    style={{ paddingLeft: 40 }}
+                    {...register("name", { required: "Full name is required" })}
+                  />
+                </div>
+                {errors.name && <p className="field-error">{errors.name.message}</p>}
+              </div>
+
+              <div className="register-simple-field">
+                <Label htmlFor="femail">Email</Label>
+                <div className="input-wrapper">
+                  <Mail size={16} className="input-icon" />
+                  <Input
+                    id="femail"
+                    type="email"
+                    placeholder="fieldworker@example.com"
+                    className={errors.email ? "error" : ""}
+                    style={{ paddingLeft: 40 }}
+                    {...register("email", { required: "Email is required" })}
+                  />
+                </div>
+                {errors.email && <p className="field-error">{errors.email.message}</p>}
+              </div>
+
+              <div className="register-simple-field">
+                <Label htmlFor="fphone">Phone Number</Label>
+                <div className="input-wrapper">
+                  <Phone size={16} className="input-icon" />
+                  <Input
+                    id="fphone"
+                    placeholder="+234 000 000 0000"
+                    className={errors.phone_number ? "error" : ""}
+                    style={{ paddingLeft: 40 }}
+                    {...register("phone_number", { required: "Phone number is required" })}
+                  />
+                </div>
+                {errors.phone_number && <p className="field-error">{errors.phone_number.message}</p>}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 — PASSWORD */}
+          {step === 3 && (
+            <div className="register-form-inner">
+              <div className="register-section-title">
+                <h2>
+                  <LockKeyhole size={16} /> Create a password
+                </h2>
+                <p>You&apos;ll use this to sign in to the Field Worker app</p>
+              </div>
+
+              <div className="register-simple-field">
+                <Label htmlFor="fpassword">Password</Label>
+                <div className="input-wrapper">
+                  <LockKeyhole size={16} className="input-icon" />
+                  <Input
+                    id="fpassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Minimum 6 characters"
+                    className={`password-input ${errors.password ? "error" : ""}`}
+                    style={{ paddingLeft: 40, paddingRight: 40 }}
+                    {...register("password", {
+                      required: "Password is required",
+                      minLength: { value: 6, message: "At least 6 characters" },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {errors.password && <p className="field-error">{errors.password.message}</p>}
+                {password && (
+                  <div className="login-strength" style={{ marginTop: 8 }}>
+                    <div className="login-strength-label">
+                      <span>Strength: </span>
+                      <span>{strength.label}</span>
+                    </div>
+                    <div className="login-strength-bar">
+                      <div
+                        className="login-strength-bar__fill"
+                        style={{ width: `${strength.score}%`, background: strength.color }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="register-simple-field">
+                <Label htmlFor="fconfirm">Confirm Password</Label>
+                <div className="input-wrapper">
+                  <LockKeyhole size={16} className="input-icon" />
+                  <Input
+                    id="fconfirm"
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="Repeat your password"
+                    className="password-input"
+                    style={{ paddingLeft: 40, paddingRight: 40 }}
+                    {...register("confirm", { required: "Please confirm your password" })}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {confirm && password && confirm !== password && (
+                  <p className="field-error">Passwords do not match.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="register-actions">
+            {step > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                disabled={isSubmitting}
+                className="register-btn register-btn--outline"
+              >
+                <ArrowLeft size={14} /> Back
+              </Button>
+            ) : (
+              <div />
+            )}
+
+            {step < 3 ? (
+              <Button type="button" onClick={handleNext} className="register-btn register-btn--primary">
+                <span>Continue</span> <ArrowRight size={14} />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="register-btn register-btn--primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  <>
+                    <span>Submit Application</span> <ArrowRight size={14} />
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE SHELL (role toggle)
+   ════════════════════════════════════════════════════════════ */
+
+export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="register-page">
+          <Loader2 size={24} className="animate-spin" />
         </div>
       }
     >
-      <AgencyRegisterWizard />
+      <RegisterPageInner />
     </Suspense>
+  );
+}
+
+function RegisterPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const roleParam = searchParams.get("role");
+  const isPWA = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as { standalone?: boolean }).standalone === true);
+  const isFieldOnly = roleParam === "field" || isPWA;
+  const [registerRole, setRegisterRole] = useState<"admin" | "field">(
+    isFieldOnly ? "field" : "admin"
+  );
+
+  useEffect(() => {
+    if (isPWA && roleParam !== "field") router.replace("/register?role=field");
+  }, [isPWA, roleParam, router]);
+
+  return (
+    <div className="register-page">
+      <div className="register-glow" />
+
+      <div className="register-container">
+        {!isFieldOnly && (
+          <div className="register-role-tabs">
+            <button
+              type="button"
+              className={`register-role-tab ${registerRole === "admin" ? "register-role-tab--active" : ""}`}
+              onClick={() => setRegisterRole("admin")}
+            >
+              <Building2 size={14} />
+              Agency Console
+            </button>
+            <button
+              type="button"
+              className={`register-role-tab ${registerRole === "field" ? "register-role-tab--active" : ""}`}
+              onClick={() => setRegisterRole("field")}
+            >
+              <HardHat size={14} />
+              Field Worker
+            </button>
+          </div>
+        )}
+
+        {registerRole === "admin" ? <AgencyRegisterWizard /> : <FieldWorkerRegister />}
+
+        <div className="register-footer">
+          <p>
+            Already registered?{" "}
+            <Link
+              href={registerRole === "field" ? "/login?role=field" : "/login"}
+              className="register-footer-link"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

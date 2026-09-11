@@ -4,16 +4,37 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const agencyToken = request.cookies.get("agencyAccessToken")?.value
 
-  // 1. If authenticated agency user tries to access /login or /register, redirect to /dashboard
+  // 1. Redirect legacy /dashboard routes to /operations
+  if (pathname.startsWith("/dashboard")) {
+    const target = "/operations" + pathname.slice("/dashboard".length)
+    return NextResponse.redirect(new URL(target, request.url))
+  }
+
+  // 1a. Root of the operations console → Command Center
+  if (pathname === "/operations") {
+    return NextResponse.redirect(new URL("/operations/command-center", request.url))
+  }
+
+  // 2. If authenticated agency user tries to access /login or /register, redirect to /operations
   if (pathname === "/login" || pathname === "/register") {
     if (agencyToken) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL("/operations", request.url))
     }
     return NextResponse.next()
   }
 
-  // 2. Protected Dashboard Routes
-  if (pathname.startsWith("/dashboard")) {
+  // 3. Protected Operations Console (Agency Admin role)
+  if (pathname.startsWith("/operations")) {
+    if (!agencyToken) {
+      const loginUrl = new URL("/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next()
+  }
+
+  // 4. Protected Field Worker Console (staff + admin roles)
+  if (pathname.startsWith("/field")) {
     if (!agencyToken) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
@@ -26,5 +47,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/register"],
+  matcher: ["/operations/:path*", "/field/:path*", "/login", "/register"],
 }

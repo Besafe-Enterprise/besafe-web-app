@@ -36,6 +36,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+
+
+#otheres
+/BesafeDashboard
+BesafeDashboard/
+BesafeDashboard
+.next
+.next/
+
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

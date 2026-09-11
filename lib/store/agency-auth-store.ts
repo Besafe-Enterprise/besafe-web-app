@@ -14,7 +14,6 @@ interface AgencyAuthStore {
   isRole: (role: AgencyRole) => boolean
   hasAnyRole: (roles: AgencyRole[]) => boolean
   isAgencyAdmin: () => boolean
-  isDispatcher: () => boolean
 }
 
 export const useAgencyAuthStore = create<AgencyAuthStore>()(
@@ -62,13 +61,7 @@ export const useAgencyAuthStore = create<AgencyAuthStore>()(
       isAgencyAdmin: () => {
         const user = get().user
         if (!user) return false
-        return user.role === "AGENCY_ADMIN" || user.role === "SUPER_ADMIN"
-      },
-
-      isDispatcher: () => {
-        const user = get().user
-        if (!user) return false
-        return user.role === "DISPATCHER"
+        return user.role === "AGENCY_ADMIN"
       },
     }),
     {

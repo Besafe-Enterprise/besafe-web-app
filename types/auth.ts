@@ -1,6 +1,8 @@
-export type AgencyRole = "SUPER_ADMIN" | "AGENCY_ADMIN" | "DISPATCHER" | "FIELD_AGENT";
+export type AgencyRole =
+  | "AGENCY_ADMIN"
+  | "FIELD_AGENT";
 
-export type StaffRole = "AGENCY_ADMIN" | "DISPATCHER";
+export type StaffRole = "AGENCY_ADMIN" | "FIELD_AGENT";
 
 export interface AgencyLocation {
   lat: number;
@@ -39,6 +41,8 @@ export interface StaffMember {
   role: StaffRole;
   is_active: boolean;
   must_change_password?: boolean;
+  active_cases?: number;
+  avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }

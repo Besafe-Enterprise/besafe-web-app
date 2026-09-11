@@ -9,6 +9,7 @@ export const agencyLoginSchema = z.object({
     .string()
     .min(1, "Password is required")
     .min(6, "Password must be at least 6 characters"),
+  role: z.enum(["admin", "field"]).optional(),
 })
 
 export type AgencyLoginFormData = z.infer<typeof agencyLoginSchema>
