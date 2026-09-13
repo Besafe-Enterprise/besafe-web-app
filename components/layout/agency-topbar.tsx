@@ -23,7 +23,8 @@ interface AgencyTopbarProps {
 export function AgencyTopbar({ onMenuToggle }: AgencyTopbarProps) {
   const pathname = usePathname();
   const agency = useAgencyAuthStore((s) => s.agency);
-  const { data: alerts = [] } = useGetAlerts();
+  const { data: alertsResp } = useGetAlerts();
+  const alerts = alertsResp?.items ?? [];
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // Compute breadcrumbs dynamically

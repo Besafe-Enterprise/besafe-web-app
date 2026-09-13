@@ -17,19 +17,22 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useGetAlerts, useGetReports, useGetDashboardStats } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { timeAgo } from "@/lib/utils/format";
+import type { Alert, Report } from "@/types";
 
 export function IncidentPopover() {
   const router = useRouter();
   const { data: stats } = useGetDashboardStats();
-  const { data: alerts = [] } = useGetAlerts({ status: "all" });
-  const { data: reports = [] } = useGetReports({ status: "all" });
+  const { data: alertsResp } = useGetAlerts({ status: "all" });
+  const { data: reportsResp } = useGetReports({ status: "all" });
+  const alerts: Alert[] = alertsResp?.items ?? [];
+  const reports: Report[] = reportsResp?.items ?? [];
   const [activeTab, setActiveTab] = useState<"alerts" | "reports">("alerts");
 
   const activeAlerts = alerts.filter(
-    (a) => a.status === "active" || a.priority === "high"
+    (a: Alert) => a.status === "active" || a.priority === "high"
   );
   const pendingReports = reports.filter(
-    (r) => r.status === "pending" || r.status === "pending_analysis" || r.status === "investigating"
+    (r: Report) => r.status === "pending" || r.status === "pending_analysis" || r.status === "investigating"
   );
 
   const totalIncidents = activeAlerts.length + pendingReports.length;
@@ -102,7 +105,7 @@ export function IncidentPopover() {
         <div className="max-h-64 overflow-y-auto divide-y divide-border/40 p-1">
           {activeTab === "alerts" ? (
             activeAlerts.length > 0 ? (
-              activeAlerts.map((alert) => (
+              activeAlerts.map((alert: Alert) => (
                 <div
                   key={alert.id}
                   onClick={() => router.push("/dashboard/alerts")}
@@ -134,7 +137,7 @@ export function IncidentPopover() {
               </div>
             )
           ) : pendingReports.length > 0 ? (
-            pendingReports.map((report) => (
+            pendingReports.map((report: Report) => (
               <div
                 key={report.id}
                 onClick={() => router.push("/dashboard/reports")}

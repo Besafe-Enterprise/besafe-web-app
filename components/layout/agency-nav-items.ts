@@ -55,19 +55,19 @@ export const navItems: NavItem[] = [
     label: "Agency Team",
     href: "/dashboard/team",
     icon: Users,
-    requiredRoles: ["SUPER_ADMIN", "AGENCY_ADMIN"],
+    requiredRoles: ["AGENCY_ADMIN"],
   },
   {
     label: "Agency Settings",
     href: "/dashboard/settings",
     icon: Settings,
-    requiredRoles: ["SUPER_ADMIN", "AGENCY_ADMIN"],
+    requiredRoles: ["AGENCY_ADMIN"],
   },
   {
     label: "Agencies Matrix",
     href: "/dashboard/admin/agencies",
     icon: Building2,
-    requiredRoles: ["SUPER_ADMIN"],
+    requiredRoles: ["AGENCY_ADMIN"],
   },
 ];
 
@@ -83,12 +83,12 @@ export const navGroups: NavGroup[] = [
   {
     title: "Agency Administration",
     items: ["/dashboard/team", "/dashboard/settings"],
-    requiredRoles: ["SUPER_ADMIN", "AGENCY_ADMIN"],
+    requiredRoles: ["AGENCY_ADMIN"],
   },
   {
     title: "Platform Administration",
     items: ["/dashboard/admin/agencies"],
-    requiredRoles: ["SUPER_ADMIN"],
+    requiredRoles: ["AGENCY_ADMIN"],
   },
 ];
 
