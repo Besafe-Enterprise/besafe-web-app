@@ -62,23 +62,28 @@ export function OperationsTopbar({ onMenuToggle }: { onMenuToggle: () => void })
     const d = n.data ?? {};
     const t = String(n.type || "");
     // Deep-link to point of interest
+    // NOTE: field progress reports (case notes) carry BOTH alert_id + report_id (UUID).
+    // They must go to /operations/cases, NOT /operations/reports (SafeChat only).
+    // So check alert_id first.
     if (t === "application" && d.request_id) {
       router.push("/operations/team");
-    } else if (d.report_id) {
-      // SafeChat report — go to report detail, scroll to relevant section
-      const rid = String(d.report_id);
-      if (t.includes("evidence") || d.evidence_id) router.push(`/operations/reports/${rid}#evidence`);
-      else if (d.note_id) router.push(`/operations/reports/${rid}#note-${String(d.note_id)}`);
-      else router.push(`/operations/reports/${rid}`);
     } else if (d.alert_id) {
       const aid = String(d.alert_id);
-      if (d.report_id) router.push(`/operations/cases/${aid}#report-${String(d.report_id)}`);
-      else if (t.includes("evidence") || d.evidence_id) router.push(`/operations/cases/${aid}#evidence`);
+      if (d.report_id || d.note_id) {
+        const noteId = String(d.report_id ?? d.note_id);
+        router.push(`/operations/cases/${aid}#report-${noteId}`);
+      } else if (t.includes("evidence") || d.evidence_id) router.push(`/operations/cases/${aid}#evidence`);
       else if (t.includes("checkin") || t === "field_checkin" || d.staff_id) {
         // Check-in → caseworker or case location
         if (d.staff_id) router.push(`/operations/caseworkers/${String(d.staff_id)}`);
         else router.push(`/operations/cases/${aid}#location`);
       } else router.push(`/operations/cases/${aid}`);
+    } else if (d.report_id) {
+      // Pure SafeChat report — go to report detail, scroll to relevant section
+      const rid = String(d.report_id);
+      if (t.includes("evidence") || d.evidence_id) router.push(`/operations/reports/${rid}#evidence`);
+      else if (d.note_id) router.push(`/operations/reports/${rid}#note-${String(d.note_id)}`);
+      else router.push(`/operations/reports/${rid}`);
     } else if (d.staff_id) {
       router.push(`/operations/caseworkers/${String(d.staff_id)}`);
     } else if (d.request_id) {

@@ -60,17 +60,17 @@ export default function FieldShell({
     const noteId = (d.note_id as string | undefined) || (d.noteId as string | undefined);
     const evidenceId = d.evidence_id as string | undefined;
     // Deep-link to point of interest
-    if (reportId) {
-      if (noteId) router.push(`/field/reports/${String(reportId)}#note-${String(noteId)}`);
-      else if (evidenceId) router.push(`/field/reports/${String(reportId)}#evidence`);
-      else router.push(`/field/reports/${String(reportId)}`);
-    } else if (alertId) {
-      if (noteId) router.push(`/field/cases/${String(alertId)}#report-${String(noteId)}`);
+    // NOTE: field progress reports carry BOTH alert_id + report_id (UUID inside alert).
+    // They must go to /field/cases, NOT /field/reports (SafeChat only).
+    if (alertId) {
+      if (reportId || noteId) router.push(`/field/cases/${String(alertId)}#report-${String(reportId ?? noteId)}`);
       else if (evidenceId) router.push(`/field/cases/${String(alertId)}#evidence`);
       else if (d.staff_id) router.push(`/field/cases/${String(alertId)}`);
       else router.push(`/field/cases/${String(alertId)}`);
     } else if (reportId) {
-      router.push(`/field/reports/${String(reportId)}`);
+      if (noteId) router.push(`/field/reports/${String(reportId)}#note-${String(noteId)}`);
+      else if (evidenceId) router.push(`/field/reports/${String(reportId)}#evidence`);
+      else router.push(`/field/reports/${String(reportId)}`);
     }
     setBellOpen(false);
   };
