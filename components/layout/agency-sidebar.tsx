@@ -109,7 +109,7 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
   const { mutate: logout, isPending: isLoggingOut } = useAgencyLogout();
   const { alerts } = useAlertStore();
 
-  const isDispatcher = user?.role === "DISPATCHER";
+  const isFieldWorker = user?.role === "FIELD_AGENT";
   const userRole = user?.role || "AGENCY_ADMIN";
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -135,8 +135,8 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
     }
   }, [showSettingsSidebar]);
 
-  const displayName = isDispatcher
-    ? `Operator ${user?.name || "Dispatcher"}`
+  const displayName = isFieldWorker
+    ? user?.name || "Field Worker"
     : user?.name || agency?.name || "Station Admin";
 
   const agencyLabel = agency?.name || user?.agency_name || "Agency HQ";
@@ -162,7 +162,7 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
                 BeSafe
               </span>
               <span className="rounded-md border border-primary/30 bg-primary/15 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider text-primary">
-                {isDispatcher ? "Dispatch" : "Command"}
+                {isFieldWorker ? "Field" : "Command"}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground truncate">
@@ -205,8 +205,8 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
           <div className="w-1/2 px-3 space-y-5">
             {navGroups
               .filter((group) => {
-                // If user is a dispatcher, hide station administration completely
-                if (isDispatcher && group.title.includes("ADMINISTRATION")) {
+                // Field workers don't see administration sections
+                if (isFieldWorker && group.title.includes("ADMINISTRATION")) {
                   return false;
                 }
                 if (!group.requiredRoles) return true;
@@ -321,7 +321,7 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
                   <span
                     className={cn(
                       "text-[8px] font-bold uppercase px-1 py-0.2 rounded border",
-                      isDispatcher
+                      isFieldWorker
                         ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                         : "bg-primary/15 text-primary border-primary/20"
                     )}
@@ -357,7 +357,7 @@ export function AgencySidebar({ onClose }: AgencySidebarProps) {
                 <span>Command Overview</span>
               </DropdownMenuItem>
 
-              {!isDispatcher && (
+              {!isFieldWorker && (
                 <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
                   <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>Station Settings</span>
