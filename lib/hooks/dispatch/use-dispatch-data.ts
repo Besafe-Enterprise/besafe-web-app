@@ -167,3 +167,21 @@ export function useAssignReport() {
     },
   });
 }
+
+// 10. Run AI analysis on a SafeChat report (manual trigger; auto runs on submit)
+export function useAnalyzeReport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ reportId }: { reportId: string | number }) => {
+      return await reportsApi.analyzeReport(reportId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dispatch", "reports"] });
+      queryClient.invalidateQueries({ queryKey: ["dispatch", "stats"] });
+    },
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "AI analysis failed"));
+    },
+  });
+}

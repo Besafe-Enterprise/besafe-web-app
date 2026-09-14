@@ -16,6 +16,7 @@ export const ACTIVE_CASE_STATUSES = [
   "new",
   "active",
   "pending_acceptance",
+  "pending_analysis",
   "acknowledged",
   "reviewing",
   "triaged",

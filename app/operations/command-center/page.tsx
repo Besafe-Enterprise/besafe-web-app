@@ -97,12 +97,26 @@ export default function CommandCenterPage() {
 
   const filteredTableItems = useMemo(() => {
     let list = allItems;
-    if (pipelineFilter === "new") list = list.filter((a) => a.status === "new");
+    if (pipelineFilter === "new") {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const startMs = start.getTime();
+      list = list.filter((a) => {
+        const t = new Date(a.created_at || 0).getTime();
+        return Number.isFinite(t) && t >= startMs && (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status);
+      });
+    }
     else if (pipelineFilter === "unassigned") list = unassigned;
     else if (pipelineFilter === "assigned") list = assigned;
     else if (pipelineFilter === "active_reports") list = allItems.filter((a) => (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status));
     else list = [...unassigned, ...assigned];
-    return [...list].sort((a, b) => (priorityOrder[displayPriority(a.priority)] ?? 5) - (priorityOrder[displayPriority(b.priority)] ?? 5));
+    const sorted = [...list];
+    if (pipelineFilter === "new") {
+      sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    } else {
+      sorted.sort((a, b) => (priorityOrder[displayPriority(a.priority)] ?? 5) - (priorityOrder[displayPriority(b.priority)] ?? 5));
+    }
+    return sorted;
   }, [allItems, pipelineFilter, unassigned, assigned]);
 
   const attentionItems = useMemo(() => {

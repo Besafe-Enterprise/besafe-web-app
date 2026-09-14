@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useGetReports, useUpdateReportStatus, useAssignReport } from "@/lib/hooks/dispatch/use-dispatch-data";
+import { useGetReports, useUpdateReportStatus, useAssignReport, useAnalyzeReport } from "@/lib/hooks/dispatch/use-dispatch-data";
 import { useGetAgencyTeam } from "@/lib/hooks/team/use-team-data";
 import { Badge } from "@/components/operations/shared/Badge";
 import { Avatar } from "@/components/operations/shared/Avatar";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/operations/shared/EmptyState";
 import { SkeletonRow } from "@/components/operations/shared/LoadingSkeleton";
 import { formatShortDate, workerStatus, reportShortId } from "@/lib/operations/utils";
 import { toast } from "sonner";
-import { FileText, Check, X, UserPlus, RotateCcw, Download, Printer, ExternalLink, MapPin, Mail, Phone, Shield, Clock, Image as ImageIcon, File, Video, Music, ChevronDown, Eye } from "lucide-react";
+import { FileText, Check, X, UserPlus, RotateCcw, Download, Printer, ExternalLink, MapPin, Mail, Phone, Shield, Clock, Image as ImageIcon, File, Video, Music, ChevronDown, Eye, Sparkles } from "lucide-react";
 import EvidenceLightbox, { EvidenceLightboxItem } from "@/components/shared/EvidenceLightbox";
 import { exportApi, downloadBlob } from "@/lib/api";
 import { useReviewReportNote } from "@/lib/hooks/team/use-team-data";
@@ -28,6 +28,7 @@ export default function ReportReviewPage() {
   const [lightbox, setLightbox] = useState<EvidenceLightboxItem | null>(null);
   const { mutate: updateStatus, isPending: updating } = useUpdateReportStatus();
   const { mutate: assignReport, isPending: assigning } = useAssignReport();
+  const { mutate: analyzeReport, isPending: analyzing } = useAnalyzeReport();
   const prevAssigning = useRef(false);
   const prevUpdating = useRef(false);
 
@@ -244,6 +245,18 @@ export default function ReportReviewPage() {
               </>
             )}
           </div>
+
+          {!(report.ai_analysis || report.ai_Analysis) && (
+            <div className="card">
+              <div className="section-header">
+                <h2 className="section-header__title" style={{ display: "flex", alignItems: "center", gap: 8 }}><Sparkles width={16} height={16} /> AI Intelligence</h2>
+              </div>
+              <p className="text-tertiary" style={{ fontSize: "var(--text-sm)", marginBottom: 8 }}>No analysis yet — auto-analysis runs on submit, or trigger it manually.</p>
+              <button type="button" className="btn btn--primary btn--sm" disabled={analyzing} onClick={() => analyzeReport({ reportId: report.id })}>
+                <Sparkles width={14} height={14} /> {analyzing ? "Analyzing…" : "Analyze with AI"}
+              </button>
+            </div>
+          )}
 
           {(report.ai_analysis || report.ai_Analysis) && (
             <div className="card">
