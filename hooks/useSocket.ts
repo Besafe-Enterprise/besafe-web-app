@@ -18,7 +18,7 @@ interface AgencyPush {
   agency_id?: string;
 }
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://besafe-server-production.up.railway.app"
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://besafe-server-productionn.up.railway.app"
 
 let globalSocket: Socket | null = null
 let listenersAttachedFor: string | null = null

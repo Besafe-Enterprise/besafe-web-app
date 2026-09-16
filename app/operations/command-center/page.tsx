@@ -98,12 +98,12 @@ export default function CommandCenterPage() {
   const filteredTableItems = useMemo(() => {
     let list = allItems;
     if (pipelineFilter === "new") {
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
-      const startMs = start.getTime();
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const localDateStr = new Date().toDateString();
       list = list.filter((a) => {
-        const t = new Date(a.created_at || 0).getTime();
-        return Number.isFinite(t) && t >= startMs && (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status);
+        const dtStr = a.created_at || "";
+        const isToday = dtStr.startsWith(todayIso) || (new Date(dtStr).toDateString() === localDateStr);
+        return isToday && (ACTIVE_CASE_STATUSES as readonly string[]).includes(a.status);
       });
     }
     else if (pipelineFilter === "unassigned") list = unassigned;
